@@ -1,5 +1,7 @@
 import MainLayout from "@/layout/MainLayout";
 import AuthLayout from "@/layout/AuthLayout";
+import AdminLayout from "@/layout/AdminLayout";
+import AdminGuard from "@/router/AdminGuard";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import Home from "@/pages/LandingPages/Home";
 import LogIn from "@/pages/AuthPages/LogIn";
@@ -15,6 +17,11 @@ import Store from "@/pages/LandingPages/Store";
 import ErrorPage from "@/pages/FallbackPages/ErrorPage";
 import NewArrivals from "@/pages/LandingPages/NewArrivals";
 import About from "@/pages/LandingPages/About";
+import AdminOverview from "@/pages/DashboardPages/AdminOverview";
+import AdminOrders from "@/pages/DashboardPages/AdminOrders";
+import AdminProducts from "@/pages/DashboardPages/AdminProducts";
+import AdminCMS from "@/pages/DashboardPages/AdminCMS";
+import AdminUsers from "@/pages/DashboardPages/AdminUsers";
 
 const router = createBrowserRouter([
   {
@@ -89,20 +96,36 @@ const router = createBrowserRouter([
       }
     ],
   },
-  // {
-  //   path: "/dashboard",
-  //   element: <DashboardLayout />,
-  //   children: [
-  //     {
-  //       index: true,
-  //       element: <Navigate to="overview" replace />,
-  //     },
-  //     {
-  //       path: "overview",
-  //       element: <Overview />,
-  //     },
-  //   ],
-  // },
+  {
+    path: "/admin",
+    element: (
+      <AdminGuard>
+        <AdminLayout />
+      </AdminGuard>
+    ),
+    children: [
+      {
+        index: true,
+        element: <AdminOverview />,
+      },
+      {
+        path: "orders",
+        element: <AdminOrders />,
+      },
+      {
+        path: "products",
+        element: <AdminProducts />,
+      },
+      {
+        path: "cms",
+        element: <AdminCMS />,
+      },
+      {
+        path: "users",
+        element: <AdminUsers />,
+      },
+    ],
+  },
 ]);
 
 export default router;

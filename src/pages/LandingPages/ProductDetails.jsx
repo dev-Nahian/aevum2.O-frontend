@@ -1,5 +1,7 @@
+
+
 import { useState, useEffect } from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useLocation, Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   Heart,
@@ -15,7 +17,9 @@ import DeliveryIconSVG from "@/components/SVG/DeliveryIconSVG";
 import FreeDeliveryIconSVG from "@/components/SVG/FreeDeliveryIconSVG";
 import AuthenticIconSVG from "@/components/SVG/AuthenticIconSVG";
 import { useDispatch } from "react-redux";
-import { addToCart } from "@/Redux/cartSlice";
+import { addToCartAsync } from "@/Redux/cartSlice";
+
+import { productAPI } from "@/lib/apiClient";
 
 // Perfume sizes (sorted logically)
 const PERFUME_SIZES = ["100ml", "125ml", "150ml", "200ml"];
@@ -110,8 +114,9 @@ export default function ProductDetails() {
     if (!product) return;
 
     dispatch(
-      addToCart({
+      addToCartAsync({
         id: product.id,
+        _id: product._id,
         title: product.title,
         category: product.category,
         price: product.price,
@@ -161,14 +166,30 @@ export default function ProductDetails() {
       );
     }, 800);
   };
-  const product = location.state?.data;
 
-  // Simulate loading state (remove when connecting to real API)
+
+  const { slug } = useParams();
+  const [product, setProduct] = useState(location.state?.data || null);
+
   useEffect(() => {
-    if (product) {
+    if (!product && slug) {
+      const fetchProduct = async () => {
+        setIsLoading(true);
+        try {
+          const data = await productAPI.getById(slug);
+          setProduct(data.product || data);
+        } catch (error) {
+          console.error("Failed to fetch product:", error);
+          toast.error("Failed to load product details.");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchProduct();
+    } else if (product) {
       setIsLoading(false);
     }
-  }, [product]);
+  }, [slug, product]);
 
   const handleQtyDecrease = () => setQuantity((q) => Math.max(1, q - 1));
   const handleQtyIncrease = () => setQuantity((q) => q + 1);

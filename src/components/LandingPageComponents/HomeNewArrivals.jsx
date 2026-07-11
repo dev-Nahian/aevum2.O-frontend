@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { productAPI } from "@/lib/apiClient";
 import Container from "../common/Container";
 import ProductCard from "../common/ProductCard";
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -70,6 +72,22 @@ const products = [
 ];
 
 export default function HomeNewArrivals() {
+    const [dbProducts, setDbProducts] = useState([]);
+    
+    useEffect(() => {
+        const fetchNewest = async () => {
+            try {
+                const data = await productAPI.getAll({ newest: "true" });
+                setDbProducts(data.products || data);
+            } catch (error) {
+                console.error("Error fetching newest arrivals:", error);
+            }
+        };
+        fetchNewest();
+    }, []);
+
+    const displayProducts = dbProducts.length > 0 ? dbProducts : products;
+
     return (
         <section className="bg-[#F8F2EB] pb-8 sm:pb-20 md:pb-24 pt-12 sm:pt-16 md:pt-20 select-none">
             <Container>
@@ -124,8 +142,8 @@ export default function HomeNewArrivals() {
                         speed={600}
                         className="!pb-6 !px-1"
                     >
-                        {products.map((product) => (
-                            <SwiperSlide key={product.id} className="!h-auto">
+                        {displayProducts.map((product) => (
+                            <SwiperSlide key={product.id || product._id} className="!h-auto">
                                 <ProductCard product={product} />
                             </SwiperSlide>
                         ))}

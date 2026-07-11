@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Container from "../../components/common/Container";
 import ProductCard from "../../components/common/ProductCard";
 import { Link } from "react-router-dom";
+import { productAPI } from "@/lib/apiClient";
 
 // Sample new arrivals data (replace with API fetch in production)
 const NEW_ARRIVALS_DATA = [
@@ -81,14 +82,19 @@ export default function NewArrivals() {
     const [isLoading, setIsLoading] = useState(true);
     const [products, setProducts] = useState([]);
 
-    // Simulate API fetch (replace with real endpoint in production)
+    // Fetch new arrivals from backend API
     useEffect(() => {
         const fetchProducts = async () => {
             setIsLoading(true);
-            // Simulate network delay
-            await new Promise((resolve) => setTimeout(resolve, 800));
-            setProducts(NEW_ARRIVALS_DATA);
-            setIsLoading(false);
+            try {
+                const data = await productAPI.getAll({ newest: "true" });
+                setProducts(data.products || data);
+            } catch (error) {
+                console.error("Error fetching new arrivals:", error);
+                setProducts(NEW_ARRIVALS_DATA);
+            } finally {
+                setIsLoading(false);
+            }
         };
         fetchProducts();
     }, []);

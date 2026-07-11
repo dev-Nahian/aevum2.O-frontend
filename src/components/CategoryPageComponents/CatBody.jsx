@@ -2,6 +2,7 @@ import Container from "@/components/common/Container";
 import ProductCard from "@/components/common/ProductCard";
 import Pagination01 from "@/components/common/pagination-01";
 import { useEffect, useState, useMemo } from "react";
+import { productAPI } from "@/lib/apiClient";
 
 // ✅ Product data maps for cleaner logic
 const PRODUCT_MAP = {
@@ -189,21 +190,39 @@ const CATEGORY_NAMES = {
 };
 
 export default function CatBody({ slug }) {
+    const [dbProducts, setDbProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     
-    // ✅ Memoized product lookup - no useEffect needed
-    const currentProducts = useMemo(() => {
-        return PRODUCT_MAP[slug] || PRODUCT_MAP.men;
+    useEffect(() => {
+        const fetchCategoryProducts = async () => {
+            setIsLoading(true);
+            try {
+                const params = {};
+                if (slug === "men") {
+                    params.productType = "Men";
+                } else if (slug === "women") {
+                    params.productType = "Women";
+                } else if (slug === "perfumes") {
+                    params.category = "FRAGRANCE";
+                }
+
+                const data = await productAPI.getAll(params);
+                setDbProducts(data.products || data);
+            } catch (error) {
+                console.error("Error fetching category products:", error);
+                // Fallback to static mapping if API fails
+                setDbProducts(PRODUCT_MAP[slug] || PRODUCT_MAP.men);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCategoryProducts();
     }, [slug]);
+
+    const currentProducts = dbProducts;
 
     const categoryLabel = CATEGORY_NAMES[slug] || "Collection";
-
-    // Simulate loading state (remove when connecting to real API)
-    useEffect(() => {
-        setIsLoading(true);
-        const timer = setTimeout(() => setIsLoading(false), 300);
-        return () => clearTimeout(timer);
-    }, [slug]);
 
     const handleFilterClick = () => {
         // TODO: Open filter modal/sheet

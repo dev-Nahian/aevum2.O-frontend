@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import signUpImg from "@/assets/Images/SignUpImage2.webp";
+import { authAPI } from "@/lib/apiClient";
 
 export default function LogIn() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +14,7 @@ export default function LogIn() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -23,19 +25,34 @@ export default function LogIn() {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    // Simulate login API delay
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    setIsSubmitting(false);
-
-    toast.success("Welcome back to AEVUM.");
-    setTimeout(() => {
-      navigate("/"); // Redirect to landing homepage
-    }, 1000);
+    try {
+      const response = await authAPI.login(data.email, data.password);
+      localStorage.setItem("aevum_token", response.token);
+      localStorage.setItem("aevum_user", JSON.stringify(response.user));
+      
+      toast.success("Welcome back to AEVUM.");
+      setTimeout(() => {
+        navigate("/"); // Redirect to landing homepage
+      }, 1000);
+    } catch (error) {
+      if (error.response?.data?.requiresVerification) {
+        toast.error("Email not verified. Sending verification code...");
+        setTimeout(() => {
+          navigate("/auth/verification/otp", { state: { email: data.email } });
+        }, 1200);
+      } else {
+        toast.error(
+          error.response?.data?.message || "Invalid credentials. Please try again."
+        );
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Auto-focus email input on mount
   useEffect(() => {
-    document.getElementById('email')?.focus();
+    document.getElementById("email")?.focus();
   }, []);
 
   return (
@@ -129,9 +146,21 @@ export default function LogIn() {
                 </label>
                 <button
                   type="button"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
-                    toast.success("Password reset instructions sent to your email!");
+                    const emailInput = watch("email");
+                    if (!emailInput) {
+                      toast.error("Please enter your email address first.");
+                      return;
+                    }
+                    try {
+                      toast.loading("Sending reset instructions...", { id: "forgot" });
+                      await authAPI.forgotPassword(emailInput);
+                      toast.success("Password reset code sent to your email!", { id: "forgot" });
+                      navigate("/auth/new-password", { state: { email: emailInput } });
+                    } catch (err) {
+                      toast.error(err.response?.data?.message || "Failed to send reset code.", { id: "forgot" });
+                    }
                   }}
                   className="font-inter text-[11px] sm:text-xs tracking-[0.05em] text-[#72706F] hover:text-[#1A1A1A] uppercase font-medium underline transition-colors focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/30 rounded-sm px-1 py-0.5"
                 >

@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import CatHero from "@/components/CategoryPageComponents/CatHero";
 import Container from "@/components/common/Container";
@@ -5,6 +7,7 @@ import ProductCard from "@/components/common/ProductCard";
 import Pagination01 from "@/components/common/pagination-01";
 import { products } from "@/data/products";
 import { SlidersHorizontal, ChevronDown, ChevronUp, X } from "lucide-react";
+import { productAPI } from "@/lib/apiClient";
 
 // Default filter state values
 const DEFAULT_FILTERS = {
@@ -23,6 +26,28 @@ export default function Store() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOption, setSortOption] = useState("FEATURED");
+  const [dbProducts, setDbProducts] = useState([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
+
+  // Fetch products from API on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      try {
+        const response = await productAPI.getAll({ limit: 1000 });
+        setDbProducts(response.products || []);
+        setProductsLoaded(true);
+      } catch (error) {
+        console.error("Failed to load products from API:", error);
+        // Fallback to static products if API fails
+        setDbProducts(products);
+        setProductsLoaded(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   // --- COLLAPSE STATES FOR DRAWER ACCORDIONS ---
   const [openSections, setOpenSections] = useState({
@@ -172,9 +197,11 @@ export default function Store() {
     setCurrentPage(1);
   };
 
+
+
   // --- FILTER & SORT LOGIC ---
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    return dbProducts.filter((product) => {
       // 1. Filter by Product Type
       if (
         appliedFilters.types.length > 0 &&
@@ -222,7 +249,7 @@ export default function Store() {
 
       return true;
     });
-  }, [appliedFilters]);
+  }, [appliedFilters, dbProducts]);
 
   const sortedProducts = useMemo(() => {
     const list = [...filteredProducts];

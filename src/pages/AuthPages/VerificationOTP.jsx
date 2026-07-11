@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import signUpImg from "@/assets/Images/SignUpImage.png";
+import { authAPI } from "@/lib/apiClient";
 
 export default function VerificationOTP() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -79,11 +80,18 @@ export default function VerificationOTP() {
   };
 
   // Reset resend timer
-  const handleResend = () => {
-    setTimeLeft(30);
-    setOtp(["", "", "", "", "", ""]);
-    inputRefs.current[0].focus();
-    toast.success("A new verification code has been sent!");
+  const handleResend = async () => {
+    try {
+      await authAPI.resendOTP(email);
+      setTimeLeft(30);
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0].focus();
+      toast.success("A new verification code has been sent!");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to resend verification code."
+      );
+    }
   };
 
   // Trigger auto-verification when all 6 digits are complete
@@ -98,17 +106,23 @@ export default function VerificationOTP() {
     setIsVerifying(true);
     const enteredCode = otp.join("");
 
-    // Simulate verification API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsVerifying(false);
-
-    if (enteredCode === "123456" || enteredCode.length === 6) {
+    try {
+      const response = await authAPI.verifyOTP(email, enteredCode);
+      localStorage.setItem("aevum_token", response.token);
+      localStorage.setItem("aevum_user", JSON.stringify(response.user));
+      
       toast.success("Verification successful! Welcome aboard.");
       setTimeout(() => {
-        navigate("/auth");
+        navigate("/"); // Redirect to landing homepage
       }, 1000);
-    } else {
-      toast.error("Incorrect verification code. Please try again.");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Incorrect verification code. Please try again."
+      );
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0].focus();
+    } finally {
+      setIsVerifying(false);
     }
   };
 

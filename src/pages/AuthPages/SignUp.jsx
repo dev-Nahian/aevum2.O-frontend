@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import signUpImg from "@/assets/Images/SignUpImage.png";
+import { authAPI } from "@/lib/apiClient";
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,15 +32,25 @@ export default function SignUp() {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    // Simulate API registration call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-
-    toast.success("Check Your Email.");
-    // Redirect to login page
-    setTimeout(() => {
-      navigate("/auth/verification/otp", { state: { email: data.email } });
-    }, 1000);
+    try {
+      const response = await authAPI.register(
+        data.fullName,
+        data.email,
+        data.mobileNumber,
+        data.password,
+        data.agreeTerms
+      );
+      toast.success(response.message || "OTP code sent to email.");
+      setTimeout(() => {
+        navigate("/auth/verification/otp", { state: { email: data.email } });
+      }, 1000);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Registration failed. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

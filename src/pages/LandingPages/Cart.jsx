@@ -14,10 +14,10 @@ import {
 import toast from "react-hot-toast";
 import Container from "@/components/common/Container";
 import {
-  incrementQuantity,
-  decrementQuantity,
-  removeFromCart,
-  clearCart,
+  incrementQuantityAsync,
+  decrementQuantityAsync,
+  removeFromCartAsync,
+  clearCartAsync,
 } from "@/Redux/cartSlice";
 
 export default function Cart() {
@@ -36,23 +36,23 @@ export default function Cart() {
   };
 
   // Increment item count
-  const handleIncrement = (id, size, title) => {
-    dispatch(incrementQuantity({ id, size }));
+  const handleIncrement = (id, size, quantity, _id) => {
+    dispatch(incrementQuantityAsync({ id, size, quantity, _id }));
   };
 
   // Decrement item count
-  const handleDecrement = (id, size, quantity, title) => {
+  const handleDecrement = (id, size, quantity, title, _id) => {
     if (quantity > 1) {
-      dispatch(decrementQuantity({ id, size }));
+      dispatch(decrementQuantityAsync({ id, size, quantity, _id }));
     } else {
       // Prompt removal if user decreases count at 1
-      handleRemove(id, size, title);
+      handleRemove(id, size, title, _id);
     }
   };
 
   // Remove single item
-  const handleRemove = (id, size, title) => {
-    dispatch(removeFromCart({ id, size }));
+  const handleRemove = (id, size, title, _id) => {
+    dispatch(removeFromCartAsync({ id, size, _id }));
     toast.success(`Removed ${title} (${size}) from your bag`, {
       position: "bottom-center",
       style: {
@@ -68,7 +68,7 @@ export default function Cart() {
 
   // Clear all items
   const handleClearAll = () => {
-    dispatch(clearCart());
+    dispatch(clearCartAsync());
     toast.success("Bag cleared", {
       position: "bottom-center",
       style: {
@@ -219,6 +219,7 @@ export default function Cart() {
                                 item.size,
                                 item.quantity,
                                 item.title,
+                                item._id
                               )
                             }
                             className="w-8 h-8 flex items-center justify-center text-[#72706F] hover:bg-[#F8F2EB] hover:text-[#13110F] transition-colors min-w-[32px] focus:outline-none"
@@ -231,7 +232,12 @@ export default function Cart() {
                           </span>
                           <button
                             onClick={() =>
-                              handleIncrement(item.id, item.size, item.title)
+                              handleIncrement(
+                                item.id,
+                                item.size,
+                                item.quantity,
+                                item._id
+                              )
                             }
                             className="w-8 h-8 flex items-center justify-center text-[#72706F] hover:bg-[#F8F2EB] hover:text-[#13110F] transition-colors min-w-[32px] focus:outline-none"
                             aria-label="Increase quantity"
@@ -256,7 +262,7 @@ export default function Cart() {
                           {/* Trash button */}
                           <button
                             onClick={() =>
-                              handleRemove(item.id, item.size, item.title)
+                              handleRemove(item.id, item.size, item.title, item._id)
                             }
                             className="p-1 text-[#72706F] hover:text-red-600 transition-colors focus:outline-none"
                             aria-label={`Remove ${item.title} from bag`}

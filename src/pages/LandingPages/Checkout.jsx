@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
+import { orderAPI } from "@/lib/apiClient";
+import { clearCart } from "@/Redux/cartSlice";
 import {
   ShoppingBag,
   ChevronRight,
@@ -35,12 +38,14 @@ const MOCK_LOGGED_IN_USER = {
 export default function Checkout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderPayload, setOrderPayload] = useState(null);
 
-  // Toggle for User Auth State (Guest vs Logged In)
-  const [userMode, setUserMode] = useState("logged_in"); // "logged_in" or "guest"
+  const currentUser = JSON.parse(localStorage.getItem("aevum_user") || "null");
+  const isLoggedIn = !!localStorage.getItem("aevum_token");
+  const [isGuestMode, setIsGuestMode] = useState(!isLoggedIn);
 
   // Promo Code States
   const [promoInput, setPromoInput] = useState("");
@@ -94,13 +99,13 @@ export default function Checkout() {
 
   // Handle Prefill trigger based on user auth state toggle
   useEffect(() => {
-    if (userMode === "logged_in") {
-      setValue("name", MOCK_LOGGED_IN_USER.name);
-      setValue("phone", MOCK_LOGGED_IN_USER.phone);
-      setValue("address", MOCK_LOGGED_IN_USER.address);
-      setValue("city", MOCK_LOGGED_IN_USER.city);
-      setValue("postalCode", MOCK_LOGGED_IN_USER.postalCode);
-      setValue("country", MOCK_LOGGED_IN_USER.country);
+    if (!isGuestMode && isLoggedIn && currentUser) {
+      setValue("name", currentUser.fullName || currentUser.name || "");
+      setValue("phone", currentUser.mobileNumber || currentUser.phone || "");
+      setValue("address", currentUser.address || "");
+      setValue("city", currentUser.city || "");
+      setValue("postalCode", currentUser.postalCode || "");
+      setValue("country", currentUser.country || "Bangladesh");
     } else {
       // Reset to empty values for manual Guest Checkout
       setValue("name", "");
@@ -110,7 +115,7 @@ export default function Checkout() {
       setValue("postalCode", "");
       setValue("country", "");
     }
-  }, [userMode, setValue]);
+  }, [isGuestMode, isLoggedIn, currentUser, setValue]);
 
   // Calculate Summary Totals
   const subtotal = checkoutItems.reduce((acc, item) => {
@@ -171,8 +176,8 @@ export default function Checkout() {
   // Handle Order Submission
   const onSubmit = async (data) => {
     setIsSubmitting(true);
+    const token = localStorage.getItem("aevum_token");
 
-    // Structure the payload exactly as specified in requirements
     const payload = {
       shippingAddress: {
         name: data.name,
@@ -185,39 +190,48 @@ export default function Checkout() {
       paymentMethod: data.paymentMethod,
     };
 
-    if (isFromCart) {
+    if (isFromCart && token) {
       payload.fromCart = true;
     } else {
       payload.items = checkoutItems.map((item) => ({
-        productId: String(item.productId || item.id),
+        productId: String(item._id || item.productId || item.id),
         quantity: item.quantity || 1,
+        size: item.size || "100ml",
       }));
     }
 
-    // Add promo information if applied
     if (appliedPromo) {
       payload.promotionalCode = appliedPromo;
       payload.discountApplied = promoDiscount;
     }
 
-    setOrderPayload(payload);
-
-    // Simulate API transaction delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
-    setIsSuccess(true);
-
-    toast.success("Order Placed Successfully!", {
-      position: "bottom-center",
-      style: {
-        background: "#1C1B1A",
-        color: "#FDFAF4",
-        fontFamily: "Inter, sans-serif",
-        fontSize: "12px",
-        borderRadius: "0px",
-        border: "1px solid #E2DFD8",
-      },
-    });
+    try {
+      const response = await orderAPI.create(payload);
+      setOrderPayload(response.order || response);
+      
+      if (isFromCart) {
+        dispatch(clearCart());
+      }
+      
+      setIsSuccess(true);
+      toast.success("Order Placed Successfully!", {
+        position: "bottom-center",
+        style: {
+          background: "#1C1B1A",
+          color: "#FDFAF4",
+          fontFamily: "Inter, sans-serif",
+          fontSize: "12px",
+          borderRadius: "0px",
+          border: "1px solid #E2DFD8",
+        },
+      });
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to place order. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSuccess) {
@@ -367,9 +381,15 @@ export default function Checkout() {
           <div className="flex items-center gap-4 bg-[#FAF9F6] border border-[#E2DFD8] p-1.5 rounded-none">
             <button
               type="button"
-              onClick={() => setUserMode("logged_in")}
+              onClick={() => {
+                if (isLoggedIn) {
+                  setIsGuestMode(false);
+                } else {
+                  navigate("/auth/login", { state: { from: location } });
+                }
+              }}
               className={`px-5 py-2 text-[10px] font-semibold tracking-[0.18em] uppercase rounded-none transition-all duration-300 ${
-                userMode === "logged_in"
+                !isGuestMode && isLoggedIn
                   ? "bg-[#1A1A1A] text-[#FDFAF4] shadow-sm"
                   : "text-[#72706F] hover:text-[#13110F]"
               }`}
@@ -378,9 +398,9 @@ export default function Checkout() {
             </button>
             <button
               type="button"
-              onClick={() => setUserMode("guest")}
+              onClick={() => setIsGuestMode(true)}
               className={`px-5 py-2 text-[10px] font-semibold tracking-[0.18em] uppercase rounded-none transition-all duration-300 ${
-                userMode === "guest"
+                isGuestMode
                   ? "bg-[#1A1A1A] text-[#FDFAF4] shadow-sm"
                   : "text-[#72706F] hover:text-[#13110F]"
               }`}
@@ -394,7 +414,7 @@ export default function Checkout() {
           {/* ── Left Column: Checkout Details Form (7 Cols) ── */}
           <div className="lg:col-span-7 xl:col-span-8 space-y-12">
             {/* Member Welcome Card */}
-            {userMode === "logged_in" && (
+            {!isGuestMode && isLoggedIn && currentUser && (
               <div className="bg-[#FAF9F6] border border-[#E2DFD8] p-6 text-xs text-[#13110F] font-inter flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-500 ease-out animate-fade-in">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full border border-[#E2DFD8] bg-[#FDFAF4] flex items-center justify-center text-[#13110F] shrink-0">
@@ -405,7 +425,7 @@ export default function Checkout() {
                       Aevum Elite Member
                     </h4>
                     <p className="text-[#72706F] font-light leading-relaxed">
-                      Welcome back, <strong>{MOCK_LOGGED_IN_USER.name}</strong>.
+                      Welcome back, <strong>{currentUser.fullName || currentUser.name}</strong>.
                       Your shipping credentials have been prefilled.
                       Complimentary courier delivery has been applied.
                     </p>

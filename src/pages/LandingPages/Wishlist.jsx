@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import Container from "@/components/common/Container";
 import ProductCard from "@/components/common/ProductCard";
 import { useDispatch } from "react-redux";
-import { addToCart } from "@/Redux/cartSlice";
+import { addToCartAsync } from "@/Redux/cartSlice";
 
 // Import local premium images
 import perfumeImage from "@/assets/Images/perfume.png";
@@ -74,8 +74,9 @@ export default function Wishlist() {
         const item = wishlistItems.find(i => i.id === id);
         if (!item) return;
 
-        dispatch(addToCart({
+        dispatch(addToCartAsync({
             id: item.id,
+            _id: item._id,
             title: item.title,
             category: item.category,
             price: item.price,

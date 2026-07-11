@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import Navbar from "@/shared/LendingShared/Navbar";
 import Footer from "@/shared/LendingShared/Footer";
 import PromotionalHeader from "@/shared/LendingShared/PromotionalHeader";
+import { authAPI } from "@/lib/apiClient";
 
 export default function NewPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     register,
@@ -33,15 +35,27 @@ export default function NewPassword() {
   }, []);
 
   const onSubmit = async (data) => {
-    setIsSubmitting(true);
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
+    const email = location.state?.email;
+    if (!email) {
+      toast.error("Email context is missing. Please initiate reset flow from the Sign In page.");
+      navigate("/auth/login");
+      return;
+    }
 
-    toast.success("Password reset successfully!");
-    setTimeout(() => {
-      navigate("/auth/login"); // Redirect to login page
-    }, 1000);
+    setIsSubmitting(true);
+    try {
+      const response = await authAPI.resetPassword(email, data.password);
+      toast.success(response.message || "Password reset successfully!");
+      setTimeout(() => {
+        navigate("/auth/login"); // Redirect to login page
+      }, 1000);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to reset password. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Password strength checker (optional enhancement)
