@@ -12,10 +12,9 @@ import { productAPI } from "@/lib/apiClient";
 // Default filter state values
 const DEFAULT_FILTERS = {
   types: ["Men", "Women", "Perfumes"],
-  menCats: [],
-  womenCats: [],
-  minPrice: 100,
-  maxPrice: 5000,
+  selectedSubCats: [],
+  minPrice: 0,
+  maxPrice: 1000,
   availability: [],
 };
 
@@ -28,6 +27,7 @@ export default function Store() {
   const [sortOption, setSortOption] = useState("FEATURED");
   const [dbProducts, setDbProducts] = useState([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   // Fetch products from API on mount
   useEffect(() => {
@@ -49,11 +49,37 @@ export default function Store() {
     fetchProducts();
   }, []);
 
+  // Fetch categories from API on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await productAPI.getCategories();
+        setCategories(response.categories || []);
+      } catch (error) {
+        console.error("Failed to load categories in store:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Sync types with categories productTypes dynamically
+  useEffect(() => {
+    if (categories.length > 0) {
+      const dbTypes = Array.from(new Set(categories.map(c => c.productType || c.name)));
+      setAppliedFilters(prev => ({
+        ...prev,
+        types: dbTypes
+      }));
+      setTempFilters(prev => ({
+        ...prev,
+        types: dbTypes
+      }));
+    }
+  }, [categories]);
+
   // --- COLLAPSE STATES FOR DRAWER ACCORDIONS ---
   const [openSections, setOpenSections] = useState({
     productType: true,
-    menCategory: true,
-    womenCategory: true,
     price: true,
     availability: true,
   });
@@ -108,21 +134,12 @@ export default function Store() {
     });
   };
 
-  const toggleTempMenCat = (cat) => {
+  const toggleTempSubCat = (cat) => {
     setTempFilters((prev) => {
-      const menCats = prev.menCats.includes(cat)
-        ? prev.menCats.filter((c) => c !== cat)
-        : [...prev.menCats, cat];
-      return { ...prev, menCats };
-    });
-  };
-
-  const toggleTempWomenCat = (cat) => {
-    setTempFilters((prev) => {
-      const womenCats = prev.womenCats.includes(cat)
-        ? prev.womenCats.filter((c) => c !== cat)
-        : [...prev.womenCats, cat];
-      return { ...prev, womenCats };
+      const selectedSubCats = prev.selectedSubCats.includes(cat)
+        ? prev.selectedSubCats.filter((c) => c !== cat)
+        : [...prev.selectedSubCats, cat];
+      return { ...prev, selectedSubCats };
     });
   };
 
@@ -158,18 +175,10 @@ export default function Store() {
     setCurrentPage(1);
   };
 
-  const removeMenCatFilter = (cat) => {
+  const removeSubCatFilter = (cat) => {
     setAppliedFilters((prev) => {
-      const menCats = prev.menCats.filter((c) => c !== cat);
-      return { ...prev, menCats };
-    });
-    setCurrentPage(1);
-  };
-
-  const removeWomenCatFilter = (cat) => {
-    setAppliedFilters((prev) => {
-      const womenCats = prev.womenCats.filter((c) => c !== cat);
-      return { ...prev, womenCats };
+      const selectedSubCats = prev.selectedSubCats.filter((c) => c !== cat);
+      return { ...prev, selectedSubCats };
     });
     setCurrentPage(1);
   };
@@ -185,8 +194,8 @@ export default function Store() {
   const resetPriceFilter = () => {
     setAppliedFilters((prev) => ({
       ...prev,
-      minPrice: 100,
-      maxPrice: 5000,
+      minPrice: 0,
+      maxPrice: 1000,
     }));
     setCurrentPage(1);
   };
@@ -214,19 +223,9 @@ export default function Store() {
         return false;
       }
 
-      // 2. Filter by Men's Subcategory (only filters Men products)
-      if (product.productType === "Men" && appliedFilters.menCats.length > 0) {
-        if (!appliedFilters.menCats.includes(product.subCategory)) {
-          return false;
-        }
-      }
-
-      // 3. Filter by Women's Subcategory (only filters Women products)
-      if (
-        product.productType === "Women" &&
-        appliedFilters.womenCats.length > 0
-      ) {
-        if (!appliedFilters.womenCats.includes(product.subCategory)) {
+      // 2. Filter by Subcategory
+      if (appliedFilters.selectedSubCats.length > 0) {
+        if (!appliedFilters.selectedSubCats.includes(product.subCategory)) {
           return false;
         }
       }
@@ -293,18 +292,17 @@ export default function Store() {
   // --- DETECT ACTIVE FILTER STATUS (FOR PILLS ROW) ---
   const hasActiveFilters = useMemo(() => {
     return (
-      appliedFilters.types.length < 3 ||
-      appliedFilters.menCats.length > 0 ||
-      appliedFilters.womenCats.length > 0 ||
-      appliedFilters.minPrice > 100 ||
-      appliedFilters.maxPrice < 5000 ||
+      appliedFilters.types.length < (categories.length > 0 ? categories.length : 3) ||
+      appliedFilters.selectedSubCats.length > 0 ||
+      appliedFilters.minPrice > 0 ||
+      appliedFilters.maxPrice < 1000 ||
       appliedFilters.availability.length > 0
     );
-  }, [appliedFilters]);
+  }, [appliedFilters, categories]);
 
   // --- DUAL PRICE SLIDER HELPER VARIABLES ---
-  const minPercent = ((tempFilters.minPrice - 100) / (5000 - 100)) * 100;
-  const maxPercent = ((tempFilters.maxPrice - 100) / (5000 - 100)) * 100;
+  const minPercent = (tempFilters.minPrice / 1000) * 100;
+  const maxPercent = (tempFilters.maxPrice / 1000) * 100;
 
   return (
     <div className="bg-[#FDFAF4] min-h-screen">
@@ -392,23 +390,11 @@ export default function Store() {
                   </button>
                 ))}
 
-              {/* Men Categories Tags */}
-              {appliedFilters.menCats.map((cat) => (
+              {/* Subcategories Tags */}
+              {appliedFilters.selectedSubCats.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => removeMenCatFilter(cat)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF8F5] border border-[#E5E2DA] rounded-full text-xs font-inter text-[#2C2A29] hover:bg-[#F2EFE8] transition-colors"
-                >
-                  {cat}
-                  <X size={12} className="text-[#9B9694]" />
-                </button>
-              ))}
-
-              {/* Women Categories Tags */}
-              {appliedFilters.womenCats.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => removeWomenCatFilter(cat)}
+                  onClick={() => removeSubCatFilter(cat)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF8F5] border border-[#E5E2DA] rounded-full text-xs font-inter text-[#2C2A29] hover:bg-[#F2EFE8] transition-colors"
                 >
                   {cat}
@@ -417,8 +403,8 @@ export default function Store() {
               ))}
 
               {/* Price Tags */}
-              {(appliedFilters.minPrice > 100 ||
-                appliedFilters.maxPrice < 5000) && (
+              {(appliedFilters.minPrice > 0 ||
+                appliedFilters.maxPrice < 1000) && (
                 <button
                   onClick={resetPriceFilter}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF8F5] border border-[#E5E2DA] rounded-full text-xs font-inter text-[#2C2A29] hover:bg-[#F2EFE8] transition-colors"
@@ -549,7 +535,10 @@ export default function Store() {
 
             {openSections.productType && (
               <div className="space-y-3 mt-4 animate-fadeIn">
-                {["Men", "Women", "Perfumes"].map((type) => {
+                {(categories.length > 0
+                  ? Array.from(new Set(categories.map((c) => c.productType || c.name)))
+                  : ["Men", "Women", "Perfumes"]
+                ).map((type) => {
                   const isChecked = tempFilters.types.includes(type);
                   return (
                     <label
@@ -595,143 +584,89 @@ export default function Store() {
             )}
           </div>
 
-          {/* B. MEN'S CATEGORY ACCORDION */}
-          <div className="border-b border-[#E5E2DA] pb-4">
-            <button
-              onClick={() => toggleSection("menCategory")}
-              className="w-full flex items-center justify-between font-cormorant text-lg font-normal text-[#1A1A1A] py-1 text-left"
-            >
-              <span>Men's Category</span>
-              {openSections.menCategory ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
+          {/* DYNAMIC CATEGORY ACCORDIONS */}
+          {(categories.length > 0
+            ? categories
+            : [
+                {
+                  _id: "men_fallback",
+                  name: "Men",
+                  subCategories: [
+                    "T-Shirts",
+                    "Drop Shoulder T-Shirts",
+                    "Formal Shirts",
+                    "Casual Shirts",
+                    "Panjabi",
+                  ],
+                },
+                {
+                  _id: "women_fallback",
+                  name: "Women",
+                  subCategories: ["T-Shirts", "Kamij", "Western Wear", "Deshi Wear"],
+                },
+              ]
+          ).map((c) => {
+            const sectionKey = `cat_${c._id}`;
+            const isOpen = openSections[sectionKey] !== false; // Default to open
+            return (
+              <div key={c._id} className="border-b border-[#E5E2DA] pb-4">
+                <button
+                  onClick={() => toggleSection(sectionKey)}
+                  className="w-full flex items-center justify-between font-cormorant text-lg font-normal text-[#1A1A1A] py-1 text-left"
+                >
+                  <span>{c.name}'s Category</span>
+                  {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
 
-            {openSections.menCategory && (
-              <div className="space-y-3 mt-4">
-                {[
-                  "Casual Wear",
-                  "Formal Wear",
-                  "Tailoring",
-                  "Outerwear",
-                  "Evening Wear",
-                  "Accessories",
-                ].map((cat) => {
-                  const isChecked = tempFilters.menCats.includes(cat);
-                  return (
-                    <label
-                      key={cat}
-                      className="flex items-center gap-3 cursor-pointer group"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleTempMenCat(cat)}
-                        className="sr-only"
-                      />
-                      <div
-                        className={`w-[18px] h-[18px] border border-[#D9D5D2] flex items-center justify-center transition-colors group-hover:border-[#1A1A1A] ${
-                          isChecked
-                            ? "bg-[#1A1A1A] border-[#1A1A1A]"
-                            : "bg-transparent"
-                        }`}
-                      >
-                        {isChecked && (
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth="3.5"
+                {isOpen && (
+                  <div className="space-y-3 mt-4">
+                    {c.subCategories?.map((cat) => {
+                      const isChecked = tempFilters.selectedSubCats.includes(cat);
+                      return (
+                        <label
+                          key={cat}
+                          className="flex items-center gap-3 cursor-pointer group"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleTempSubCat(cat)}
+                            className="sr-only"
+                          />
+                          <div
+                            className={`w-[18px] h-[18px] border border-[#D9D5D2] flex items-center justify-center transition-colors group-hover:border-[#1A1A1A] ${
+                              isChecked
+                                ? "bg-[#1A1A1A] border-[#1A1A1A]"
+                                : "bg-transparent"
+                            }`}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="font-inter text-xs text-[#72706F] tracking-wide group-hover:text-[#1A1A1A] transition-colors leading-none">
-                        {cat}
-                      </span>
-                    </label>
-                  );
-                })}
+                            {isChecked && (
+                              <svg
+                                className="w-3 h-3 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth="3.5"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                          <span className="font-inter text-xs text-[#72706F] tracking-wide group-hover:text-[#1A1A1A] transition-colors leading-none">
+                            {cat}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-
-          {/* C. WOMEN'S CATEGORY ACCORDION */}
-          <div className="border-b border-[#E5E2DA] pb-4">
-            <button
-              onClick={() => toggleSection("womenCategory")}
-              className="w-full flex items-center justify-between font-cormorant text-lg font-normal text-[#1A1A1A] py-1 text-left"
-            >
-              <span>Women's Category</span>
-              {openSections.womenCategory ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
-
-            {openSections.womenCategory && (
-              <div className="space-y-3 mt-4">
-                {[
-                  "Dresses",
-                  "Evening",
-                  "Casual",
-                  "Luxury Essentials",
-                  "Tailoring",
-                  "Accessories",
-                ].map((cat) => {
-                  const isChecked = tempFilters.womenCats.includes(cat);
-                  return (
-                    <label
-                      key={cat}
-                      className="flex items-center gap-3 cursor-pointer group"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleTempWomenCat(cat)}
-                        className="sr-only"
-                      />
-                      <div
-                        className={`w-[18px] h-[18px] border border-[#D9D5D2] flex items-center justify-center transition-colors group-hover:border-[#1A1A1A] ${
-                          isChecked
-                            ? "bg-[#1A1A1A] border-[#1A1A1A]"
-                            : "bg-transparent"
-                        }`}
-                      >
-                        {isChecked && (
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth="3.5"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="font-inter text-xs text-[#72706F] tracking-wide group-hover:text-[#1A1A1A] transition-colors leading-none">
-                        {cat}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+            );
+          })}
 
           {/* D. PRICE ACCORDION */}
           <div className="border-b border-[#E5E2DA] pb-5">
@@ -762,8 +697,8 @@ export default function Store() {
                   {/* Slider inputs overlayed */}
                   <input
                     type="range"
-                    min="100"
-                    max="5000"
+                    min="0"
+                    max="1000"
                     value={tempFilters.minPrice}
                     onChange={(e) => {
                       const val = Math.min(
@@ -777,8 +712,8 @@ export default function Store() {
                   />
                   <input
                     type="range"
-                    min="100"
-                    max="5000"
+                    min="0"
+                    max="1000"
                     value={tempFilters.maxPrice}
                     onChange={(e) => {
                       const val = Math.max(
@@ -805,8 +740,8 @@ export default function Store() {
                       <input
                         type="number"
                         value={tempFilters.minPrice}
-                        min="100"
-                        max="5000"
+                        min="0"
+                        max="1000"
                         onChange={(e) => {
                           const val = Math.min(
                             Number(e.target.value),
@@ -814,7 +749,7 @@ export default function Store() {
                           );
                           setTempFilters((prev) => ({
                             ...prev,
-                            minPrice: isNaN(val) ? 100 : val,
+                            minPrice: isNaN(val) ? 0 : val,
                           }));
                         }}
                         className="w-full font-inter text-xs text-[#1A1A1A] bg-transparent outline-none border-none p-0 focus:ring-0"
@@ -832,8 +767,8 @@ export default function Store() {
                       <input
                         type="number"
                         value={tempFilters.maxPrice}
-                        min="100"
-                        max="5000"
+                        min="0"
+                        max="1000"
                         onChange={(e) => {
                           const val = Math.max(
                             Number(e.target.value),
@@ -841,7 +776,7 @@ export default function Store() {
                           );
                           setTempFilters((prev) => ({
                             ...prev,
-                            maxPrice: isNaN(val) ? 5000 : val,
+                            maxPrice: isNaN(val) ? 1000 : val,
                           }));
                         }}
                         className="w-full font-inter text-xs text-[#1A1A1A] bg-transparent outline-none border-none p-0 focus:ring-0"

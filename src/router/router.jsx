@@ -22,6 +22,7 @@ import AdminOrders from "@/pages/DashboardPages/AdminOrders";
 import AdminProducts from "@/pages/DashboardPages/AdminProducts";
 import AdminCMS from "@/pages/DashboardPages/AdminCMS";
 import AdminUsers from "@/pages/DashboardPages/AdminUsers";
+import AdminCategories from "@/pages/DashboardPages/AdminCategories";
 
 const router = createBrowserRouter([
   {
@@ -123,6 +124,10 @@ const router = createBrowserRouter([
       {
         path: "users",
         element: <AdminUsers />,
+      },
+      {
+        path: "categories",
+        element: <AdminCategories />,
       },
     ],
   },

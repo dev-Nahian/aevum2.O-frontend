@@ -33,4 +33,15 @@ export const adminAPI = {
   // Users
   getUsers: () => adminClient.get("/admin/users").then((r) => r.data),
   makeAdmin: (id) => adminClient.put(`/admin/users/${id}/make-admin`).then((r) => r.data),
+
+  // Categories
+  getCategories: () => adminClient.get("/categories").then((r) => r.data),
+  createCategory: (data) => adminClient.post("/categories", data).then((r) => r.data),
+  updateCategory: (id, data) => adminClient.put(`/categories/${id}`, data).then((r) => r.data),
+  deleteCategory: (id) => adminClient.delete(`/categories/${id}`).then((r) => r.data),
+
+  // File Upload
+  uploadImage: (formData) => adminClient.post("/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  }).then((r) => r.data),
 };

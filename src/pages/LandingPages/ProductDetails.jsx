@@ -85,6 +85,7 @@ export default function ProductDetails() {
   const [openSection, setOpenSection] = useState(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -169,27 +170,45 @@ export default function ProductDetails() {
 
 
   const { slug } = useParams();
-  const [product, setProduct] = useState(location.state?.data || null);
+  const [prevSlug, setPrevSlug] = useState(slug);
+  const [product, setProduct] = useState(null);
+
+  if (slug !== prevSlug) {
+    setPrevSlug(slug);
+    setProduct(null);
+    setIsLoading(true);
+  }
 
   useEffect(() => {
-    if (!product && slug) {
-      const fetchProduct = async () => {
-        setIsLoading(true);
+    // Reset local product states on slug change
+    setSelectedSize("100ml");
+    setQuantity(1);
+    setOpenSection(null);
+    setIsWishlisted(false);
+
+    const fetchProductAndRelated = async () => {
+      setIsLoading(true);
+      try {
+        const data = await productAPI.getById(slug);
+        const currentProd = data.product || data;
+        setProduct(currentProd);
+        
         try {
-          const data = await productAPI.getById(slug);
-          setProduct(data.product || data);
-        } catch (error) {
-          console.error("Failed to fetch product:", error);
-          toast.error("Failed to load product details.");
-        } finally {
-          setIsLoading(false);
+          const relatedData = await productAPI.getRelated(slug);
+          setRelatedProducts(relatedData.products || []);
+        } catch (relErr) {
+          console.error("Failed to fetch related products:", relErr);
         }
-      };
-      fetchProduct();
-    } else if (product) {
-      setIsLoading(false);
-    }
-  }, [slug, product]);
+      } catch (error) {
+        console.error("Failed to fetch product:", error);
+        toast.error("Failed to load product details.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProductAndRelated();
+  }, [slug]);
 
   const handleQtyDecrease = () => setQuantity((q) => Math.max(1, q - 1));
   const handleQtyIncrease = () => setQuantity((q) => q + 1);
@@ -398,7 +417,18 @@ export default function ProductDetails() {
               <div className="w-full h-px bg-[#E5E2DA] mb-4 sm:mb-6" />
 
               {/* Accordion Sections */}
-              {ACCORDION_SECTIONS.map((section) => (
+              {[
+                {
+                  id: "description",
+                  label: "DESCRIPTION",
+                  content: product?.description || "AEVUM Signature is a timeless Eau de Parfum crafted for those who appreciate understated luxury. A refined blend of natural florals, warm woods, and subtle spice creates an effortlessly elegant fragrance that lingers beautifully throughout the day.",
+                },
+                {
+                  id: "composition",
+                  label: "COMPOSITION",
+                  content: product?.composition || "Top notes: Bergamot, Pink Pepper. Heart notes: Rose, Jasmine, Iris. Base notes: Sandalwood, Musk, Amber, Vetiver. 100ml Eau de Parfum. Alcohol Denat., Aqua, Parfum.",
+                },
+              ].map((section) => (
                 <div
                   key={section.id}
                   className="border-b border-[#E5E2DA] last:border-0"
@@ -456,8 +486,8 @@ export default function ProductDetails() {
         {/* Full-width Product Grid - NO Container wrapper */}
         <div className="w-full overflow-x-hidden">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-5 md:gap-0 px-4 sm:px-6 lg:px-0">
-            {MAY_LIKE_DATA.map((item) => (
-              <ProductCard key={item.id} product={item} />
+            {(relatedProducts.length > 0 ? relatedProducts : MAY_LIKE_DATA.slice(0, 5)).map((item) => (
+              <ProductCard key={item._id || item.id} product={item} />
             ))}
           </div>
         </div>

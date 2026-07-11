@@ -65,6 +65,14 @@ export const productAPI = {
     const response = await apiClient.get(`/products/${id}`);
     return response.data;
   },
+  getRelated: async (id) => {
+    const response = await apiClient.get(`/products/${id}/related`);
+    return response.data;
+  },
+  getCategories: async () => {
+    const response = await apiClient.get("/categories");
+    return response.data;
+  },
 };
 
 export const orderAPI = {

@@ -203,7 +203,7 @@ export default function CatBody({ slug }) {
                 } else if (slug === "women") {
                     params.productType = "Women";
                 } else if (slug === "perfumes") {
-                    params.category = "FRAGRANCE";
+                    params.productType = "Perfumes";
                 }
 
                 const data = await productAPI.getAll(params);

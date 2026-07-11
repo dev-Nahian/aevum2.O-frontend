@@ -30,7 +30,7 @@ export default function ProductCard({
     if (variant === "wishlist") {
         return (
             <Link
-                to={`/product/${product.id}`}
+                to={`/product/${product.id || product._id}`}
                 state={{ data: product }}
                 className="group relative flex flex-col w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2C2A29]/30 rounded-sm"
                 aria-label={`View details for ${product.title}`}
@@ -107,7 +107,7 @@ export default function ProductCard({
     // Default variant
     return (
         <Link
-            to={`/product/${product.id}`}
+            to={`/product/${product.id || product._id}`}
             state={{ data: product }}
             className="group flex flex-col w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2C2A29]/30 rounded-sm"
             aria-label={`View details for ${product.title}`}
