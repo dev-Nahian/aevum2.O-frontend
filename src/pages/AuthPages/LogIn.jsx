@@ -37,6 +37,7 @@ export default function LogIn() {
     } catch (error) {
       if (error.response?.data?.requiresVerification) {
         toast.error("Email not verified. Sending verification code...");
+        localStorage.setItem("aevum_signup_email", data.email);
         setTimeout(() => {
           navigate("/auth/verification/otp", { state: { email: data.email } });
         }, 1200);
@@ -157,6 +158,7 @@ export default function LogIn() {
                       toast.loading("Sending reset instructions...", { id: "forgot" });
                       await authAPI.forgotPassword(emailInput);
                       toast.success("Password reset code sent to your email!", { id: "forgot" });
+                      localStorage.setItem("aevum_reset_email", emailInput);
                       navigate("/auth/new-password", { state: { email: emailInput } });
                     } catch (err) {
                       toast.error(err.response?.data?.message || "Failed to send reset code.", { id: "forgot" });

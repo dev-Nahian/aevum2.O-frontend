@@ -98,7 +98,9 @@ export default function ProductDetails() {
         fromCart: false,
         items: [
           {
-            productId: product.id,
+            productId: product._id || product.id,
+            _id: product._id,
+            id: product.id,
             title: product.title,
             category: product.category,
             price: product.price,

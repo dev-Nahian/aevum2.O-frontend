@@ -35,7 +35,7 @@ export default function NewPassword() {
   }, []);
 
   const onSubmit = async (data) => {
-    const email = location.state?.email;
+    const email = location.state?.email || localStorage.getItem("aevum_reset_email");
     if (!email) {
       toast.error("Email context is missing. Please initiate reset flow from the Sign In page.");
       navigate("/auth/login");

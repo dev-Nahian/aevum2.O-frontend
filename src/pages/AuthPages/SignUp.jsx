@@ -41,6 +41,7 @@ export default function SignUp() {
         data.agreeTerms
       );
       toast.success(response.message || "OTP code sent to email.");
+      localStorage.setItem("aevum_signup_email", data.email);
       setTimeout(() => {
         navigate("/auth/verification/otp", { state: { email: data.email } });
       }, 1000);
@@ -170,11 +171,10 @@ export default function SignUp() {
                 type="tel"
                 autoComplete="tel"
                 inputMode="tel"
-                pattern="[0-9+\-\s()]*"
                 {...register("mobileNumber", { 
                   required: "Mobile number is required",
                   pattern: {
-                    value: /^[0-9+\-\s()]{8,}$/,
+                    value: /^[0-9+\s()\-]{8,}$/,
                     message: "Please enter a valid mobile number",
                   }
                 })}

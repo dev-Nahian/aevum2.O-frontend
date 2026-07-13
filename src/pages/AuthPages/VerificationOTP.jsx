@@ -14,7 +14,7 @@ export default function VerificationOTP() {
   const inputRefs = useRef([]);
 
   // Retrieve dynamic email address if passed from signup flow, or fallback to mockup email
-  const email = location.state?.email || "example@aevum.com";
+  const email = location.state?.email || localStorage.getItem("aevum_signup_email") || "example@aevum.com";
 
   // Countdown timer effect
   useEffect(() => {
