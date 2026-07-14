@@ -12,9 +12,31 @@ export default function  Navbar() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const location = useLocation();
 
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        const token = localStorage.getItem("aevum_token");
+        const user = JSON.parse(localStorage.getItem("aevum_user") || "null");
+        setIsLoggedIn(!!token);
+        setIsAdmin(!!(token && user?.isAdmin));
+    }, [location]);
+
+    const handleLogout = () => {
+        localStorage.removeItem("aevum_token");
+        localStorage.removeItem("aevum_user");
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+        window.location.href = "/";
+    };
+
     // Select cart state and calculate quantity count
     const cartItems = useSelector((state) => state.cart?.cartItems || []);
     const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+    // Select wishlist state
+    const wishlistItems = useSelector((state) => state.wishlist?.wishlistItems || []);
+    const wishlistCount = wishlistItems.length;
 
     // Dark navbar for product & wishlist pages
     useEffect(() => {
@@ -26,7 +48,8 @@ export default function  Navbar() {
             currentPath.includes("/checkout") ||
             currentPath.includes("/cart") ||
             currentPath.includes("/new-arrivals") ||
-            currentPath.includes("/about")
+            currentPath.includes("/about") ||
+            currentPath.includes("/search")
         );
     }, [location]);
 
@@ -134,9 +157,18 @@ export default function  Navbar() {
                         {/* 💻 Desktop Icons + CTA */}
                         <div className="hidden lg:flex items-center gap-6 xl:gap-8">
                             <div className={`flex items-center gap-5 transition-colors ${isDark ? "text-black/80" : "text-white/80"}`}>
-                                <Search size={20} strokeWidth={1.5} className={`${iconBaseClass} ${isDark ? iconColorDark : iconColorLight}`} />
-                                <Link to="/wishlist">
+                                <Link to="/search">
+                                    <Search size={20} strokeWidth={1.5} className={`${iconBaseClass} ${isDark ? iconColorDark : iconColorLight}`} />
+                                </Link>
+                                <Link to="/wishlist" className="relative flex items-center justify-center">
                                     <Heart size={20} strokeWidth={1.5} className={`${iconBaseClass} ${isDark ? iconColorDark : iconColorLight}`} />
+                                    {wishlistCount > 0 && (
+                                        <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center transition-all ${
+                                            isDark ? "bg-[#1C1B1A] text-[#FDFAF4]" : "bg-[#FDFAF4] text-[#1C1B1A]"
+                                        }`}>
+                                            {wishlistCount}
+                                        </span>
+                                    )}
                                 </Link>
                                 <Link to="/cart" className="relative flex items-center justify-center">
                                     <ShoppingBag size={20} strokeWidth={1.5} className={`${iconBaseClass} ${isDark ? iconColorDark : iconColorLight}`} />
@@ -149,16 +181,43 @@ export default function  Navbar() {
                                     )}
                                 </Link>
                             </div>
-                            <Link
-                                to="/auth/signup"
-                                className={`px-7 py-2.5 text-[12px] font-medium tracking-[0.2em] uppercase rounded-none bg-transparent transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-black/20 ${
-                                    isDark
-                                        ? "border border-black/40 hover:border-black text-black hover:bg-black hover:text-white"
-                                        : "border border-white/40 hover:border-white text-white hover:bg-white hover:text-black"
-                                }`}
-                            >
-                                SIGN UP
-                            </Link>
+                            {isLoggedIn ? (
+                                <div className="flex items-center gap-4">
+                                    {isAdmin && (
+                                        <Link
+                                            to="/admin"
+                                            className={`px-5 py-2.5 text-[12px] font-medium tracking-[0.2em] uppercase rounded-none bg-transparent transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-black/20 ${
+                                                isDark
+                                                    ? "border border-black/40 hover:border-black text-black hover:bg-black hover:text-white"
+                                                    : "border border-white/40 hover:border-white text-white hover:bg-white hover:text-black"
+                                            }`}
+                                        >
+                                            ADMIN
+                                        </Link>
+                                    )}
+                                    <button
+                                        onClick={handleLogout}
+                                        className={`px-5 py-2.5 text-[12px] font-medium tracking-[0.2em] uppercase rounded-none bg-transparent transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-black/20 ${
+                                            isDark
+                                                ? "border border-black/40 hover:border-black text-black hover:bg-black hover:text-white"
+                                                : "border border-white/40 hover:border-white text-white hover:bg-white hover:text-black"
+                                        }`}
+                                    >
+                                        LOG OUT
+                                    </button>
+                                </div>
+                            ) : (
+                                <Link
+                                    to="/auth/signup"
+                                    className={`px-7 py-2.5 text-[12px] font-medium tracking-[0.2em] uppercase rounded-none bg-transparent transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-black/20 ${
+                                        isDark
+                                            ? "border border-black/40 hover:border-black text-black hover:bg-black hover:text-white"
+                                            : "border border-white/40 hover:border-white text-white hover:bg-white hover:text-black"
+                                    }`}
+                                >
+                                    SIGN UP
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </Container>
@@ -184,9 +243,16 @@ export default function  Navbar() {
 
                             {/* Mobile Icons - White for dark overlay */}
                             <div className="flex items-center gap-3 pt-4">
-                                <Search size={20} strokeWidth={1.5} className="cursor-pointer text-white/75 hover:text-white transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center" />
-                                <Link to="/wishlist" className="cursor-pointer min-w-[32px] min-h-[32px] flex items-center justify-center" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Link to="/search" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Search size={20} strokeWidth={1.5} className="cursor-pointer text-white/75 hover:text-white transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center" />
+                                </Link>
+                                <Link to="/wishlist" className="relative cursor-pointer min-w-[32px] min-h-[32px] flex items-center justify-center" onClick={() => setIsMobileMenuOpen(false)}>
                                     <Heart size={24} strokeWidth={1.5} className="text-white/75 hover:text-white transition-colors" />
+                                    {wishlistCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-[#FDFAF4] text-[#1C1B1A] text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                                            {wishlistCount}
+                                        </span>
+                                    )}
                                 </Link>
                                 <Link to="/cart" className="relative min-w-[28px] min-h-[28px] flex items-center justify-center" onClick={() => setIsMobileMenuOpen(false)}>
                                     <ShoppingBag size={20} strokeWidth={1.5} className="text-white/75 hover:text-white transition-colors" />
@@ -199,9 +265,36 @@ export default function  Navbar() {
                             </div>
 
                             {/* Mobile CTA Button - White style for dark overlay */}
-                            <Link to="/auth/signup" className="mt-4 w-full border border-white/60 hover:border-white px-7 py-3 text-[13px] font-medium tracking-[0.2em] uppercase text-white hover:bg-white hover:text-black transition-all focus:outline-none focus:ring-2 focus:ring-white/30">
-                                SIGN UP
-                            </Link>
+                            {isLoggedIn ? (
+                                <div className="flex flex-col gap-3 mt-4 w-full">
+                                    {isAdmin && (
+                                        <Link 
+                                            to="/admin" 
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="w-full text-center border border-white/60 hover:border-white px-7 py-3 text-[13px] font-medium tracking-[0.2em] uppercase text-white hover:bg-white hover:text-black transition-all focus:outline-none focus:ring-2 focus:ring-white/30"
+                                        >
+                                            ADMIN
+                                        </Link>
+                                    )}
+                                    <button 
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            handleLogout();
+                                        }} 
+                                        className="w-full text-center border border-white/60 hover:border-white px-7 py-3 text-[13px] font-medium tracking-[0.2em] uppercase text-white hover:bg-white hover:text-black transition-all focus:outline-none focus:ring-2 focus:ring-white/30"
+                                    >
+                                        LOG OUT
+                                    </button>
+                                </div>
+                            ) : (
+                                <Link 
+                                    to="/auth/signup" 
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="mt-4 w-full text-center border border-white/60 hover:border-white px-7 py-3 text-[13px] font-medium tracking-[0.2em] uppercase text-white hover:bg-white hover:text-black transition-all focus:outline-none focus:ring-2 focus:ring-white/30"
+                                >
+                                    SIGN UP
+                                </Link>
+                            )}
                         </div>
                     </Container>
                 </div>
@@ -243,9 +336,16 @@ export default function  Navbar() {
                         {/* Desktop Icons + CTA */}
                         <div className="hidden lg:flex items-center gap-6 xl:gap-8">
                             <div className="flex items-center gap-5 text-black/80">
-                                <Search size={20} strokeWidth={1.5} className={`${iconBaseClass} hover:text-black`} />
-                                <Link to="/wishlist">
+                                <Link to="/search">
+                                    <Search size={20} strokeWidth={1.5} className={`${iconBaseClass} hover:text-black`} />
+                                </Link>
+                                <Link to="/wishlist" className="relative flex items-center justify-center">
                                     <Heart size={20} strokeWidth={1.5} className={`${iconBaseClass} hover:text-black`} />
+                                    {wishlistCount > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 bg-[#1C1B1A] text-[#FDFAF4] text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                                            {wishlistCount}
+                                        </span>
+                                    )}
                                 </Link>
                                 <Link to="/cart" className="relative flex items-center justify-center">
                                     <ShoppingBag size={20} strokeWidth={1.5} className={`${iconBaseClass} hover:text-black`} />
@@ -256,9 +356,31 @@ export default function  Navbar() {
                                     )}
                                 </Link>
                             </div>
-                            <Link to="/auth/signup" className="border border-black/40 hover:border-black px-7 py-2.5 text-[12px] font-medium tracking-[0.2em] uppercase text-black bg-transparent hover:bg-black hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-black/20">
-                                SIGN UP
-                            </Link>
+                            {isLoggedIn ? (
+                                <div className="flex items-center gap-4">
+                                    {isAdmin && (
+                                        <Link 
+                                            to="/admin" 
+                                            className="border border-black/40 hover:border-black px-5 py-2.5 text-[12px] font-medium tracking-[0.2em] uppercase text-black bg-transparent hover:bg-black hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-black/20"
+                                        >
+                                            ADMIN
+                                        </Link>
+                                    )}
+                                    <button 
+                                        onClick={handleLogout} 
+                                        className="border border-black/40 hover:border-black px-5 py-2.5 text-[12px] font-medium tracking-[0.2em] uppercase text-black bg-transparent hover:bg-black hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-black/20"
+                                    >
+                                        LOG OUT
+                                    </button>
+                                </div>
+                            ) : (
+                                <Link 
+                                    to="/auth/signup" 
+                                    className="border border-black/40 hover:border-black px-7 py-2.5 text-[12px] font-medium tracking-[0.2em] uppercase text-black bg-transparent hover:bg-black hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-black/20"
+                                >
+                                    SIGN UP
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </Container>

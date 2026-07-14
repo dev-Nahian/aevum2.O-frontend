@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingBag, Share, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import Container from "@/components/common/Container";
 import ProductCard from "@/components/common/ProductCard";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addToCartAsync } from "@/Redux/cartSlice";
+import { fetchWishlistAsync, removeFromWishlistAsync, clearWishlistAsync } from "@/Redux/wishlistSlice";
 
 // Import local premium images
 import perfumeImage from "@/assets/Images/perfume.png";
@@ -14,48 +15,27 @@ import perfume2 from "@/assets/Images/Perfume2.avif";
 import mens1 from "@/assets/Images/Mens1.avif";
 
 // Sample wishlist data
-const INITIAL_WISHLIST = [
-    {
-        id: 1,
-        category: "Fragrance",
-        title: "Imagination",
-        price: "$320",
-        image: perfumeImage,
-    },
-    {
-        id: 2,
-        category: "Fragrance",
-        title: "Midnight Oud Essence",
-        price: "$120",
-        image: perfume1,
-    },
-    {
-        id: 3,
-        category: "Fragrance",
-        title: "Velvet Rose Elixir",
-        price: "$145",
-        image: perfume2,
-    },
-    {
-        id: 4,
-        category: "Outerwear",
-        title: "Camel Cashmere Overcoat",
-        price: "$2,890",
-        image: mens1,
-    },
-];
+const INITIAL_WISHLIST = [];
 
 export default function Wishlist() {
-    const [wishlistItems, setWishlistItems] = useState(INITIAL_WISHLIST);
+    const wishlistItems = useSelector((state) => state.wishlist?.wishlistItems || []);
     const [isRemoving, setIsRemoving] = useState(null);
     const dispatch = useDispatch();
 
+    useEffect(() => {
+        const token = localStorage.getItem("aevum_token");
+        if (token) {
+            dispatch(fetchWishlistAsync());
+        }
+    }, [dispatch]);
+
     const handleRemove = (id) => {
         setIsRemoving(id);
-        const itemToRemove = wishlistItems.find(item => item.id === id);
-        // Simulate API call delay
+        const itemToRemove = wishlistItems.find(item => item.id === id || item._id === id);
+        
+        dispatch(removeFromWishlistAsync(id || itemToRemove?._id));
+        
         setTimeout(() => {
-            setWishlistItems((prev) => prev.filter((item) => item.id !== id));
             setIsRemoving(null);
             toast.success(`${itemToRemove?.title || "Item"} removed from wishlist`, {
                 position: "bottom-center",
@@ -71,7 +51,7 @@ export default function Wishlist() {
     };
 
     const handleMoveToBag = (id) => {
-        const item = wishlistItems.find(i => i.id === id);
+        const item = wishlistItems.find(i => i.id === id || i._id === id);
         if (!item) return;
 
         dispatch(addToCartAsync({
@@ -85,7 +65,9 @@ export default function Wishlist() {
             size: "100ml"
         }));
 
-        toast.success(`Added ${item.title} to your bag`, {
+        dispatch(removeFromWishlistAsync(id || item?._id));
+
+        toast.success(`Moved ${item.title} to your bag`, {
             position: "bottom-center",
             style: {
                 background: "#1A1A1A",
@@ -98,7 +80,7 @@ export default function Wishlist() {
     };
 
     const handlePersonalize = (id) => {
-        const item = wishlistItems.find(i => i.id === id);
+        const item = wishlistItems.find(i => i.id === id || i._id === id);
         toast.success(`Opening engraving options for ${item?.title || "item"}`, {
             icon: "✨",
             position: "bottom-center",
@@ -164,7 +146,7 @@ export default function Wishlist() {
                             </h2>
                             <button
                                 onClick={() => {
-                                    setWishlistItems([]);
+                                    dispatch(clearWishlistAsync());
                                     toast.success("Wishlist cleared");
                                 }}
                                 className="font-inter text-[10px] tracking-[0.2em] text-[#72706F] uppercase hover:text-red-600 transition-colors"

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, ShoppingBag, Package, FileText, LogOut,
-  ChevronRight, Menu, X, Users, User, Tags
+  ChevronRight, Menu, X, Users, User, Tags, Star
 } from "lucide-react";
 
 const NAV = [
@@ -12,6 +12,7 @@ const NAV = [
   { to: "/admin/categories", label: "Categories", icon: Tags },
   { to: "/admin/cms", label: "CMS Content", icon: FileText },
   { to: "/admin/users", label: "Customers", icon: Users },
+  { to: "/admin/reviews", label: "Reviews", icon: Star },
 ];
 
 export default function AdminLayout() {

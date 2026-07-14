@@ -12,64 +12,7 @@ import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
 // NEW ARRIVAL PRODUCTS JSON
-const products = [
-    {
-        id: 1,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "৳2,890",
-        image: `https://www.aarong.com/_next/image?url=https%3A%2F%2Fmcprod.aarong.com%2Fmedia%2Fshopthelook_shoplook%2F2%2F3%2F23.jpg&w=640&q=75`,
-    },
-    {
-        id: 2,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "৳2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/1/2/1200000032259.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 3,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "৳2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/0/4/0410000115792.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 4,
-        category: "OUTERWEAR",
-        title: "Formal Black Shirt",
-        price: "৳2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/0/0/0070000058743.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 5,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "৳2,890",
-        image: `https://www.aarong.com/_next/image?url=https%3A%2F%2Fmcprod.aarong.com%2Fmedia%2Fshopthelook_shoplook%2F2%2F3%2F23.jpg&w=640&q=75`,
-    },
-    {
-        id: 6,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "৳2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/1/2/1200000032259.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 7,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "৳2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/0/4/0410000115792.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 8,
-        category: "OUTERWEAR",
-        title: "Formal Black Shirt",
-        price: "৳2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/0/0/0070000058743.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-];
+const products = [];
 
 export default function HomeNewArrivals() {
     const [dbProducts, setDbProducts] = useState([]);
@@ -84,6 +27,23 @@ export default function HomeNewArrivals() {
             }
         };
         fetchNewest();
+
+        const handleFocus = () => {
+            fetchNewest();
+        };
+        window.addEventListener("focus", handleFocus);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") {
+                fetchNewest();
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisibility);
+
+        return () => {
+            window.removeEventListener("focus", handleFocus);
+            document.removeEventListener("visibilitychange", handleVisibility);
+        };
     }, []);
 
     const displayProducts = dbProducts.length > 0 ? dbProducts : products;

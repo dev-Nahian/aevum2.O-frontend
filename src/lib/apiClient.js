@@ -14,6 +14,10 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Prevent caching of API responses
+    config.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+    config.headers["Pragma"] = "no-cache";
+    config.headers["Expires"] = "0";
     return config;
   },
   (error) => Promise.reject(error)
@@ -73,6 +77,18 @@ export const productAPI = {
     const response = await apiClient.get("/categories");
     return response.data;
   },
+  getSuggestions: async (query) => {
+    const response = await apiClient.get("/products/search/suggestions", { params: { q: query } });
+    return response.data;
+  },
+  getReviews: async (id) => {
+    const response = await apiClient.get(`/products/${id}/reviews`);
+    return response.data;
+  },
+  createReview: async (id, reviewData) => {
+    const response = await apiClient.post(`/products/${id}/reviews`, reviewData);
+    return response.data;
+  },
 };
 
 export const orderAPI = {
@@ -105,6 +121,25 @@ export const cartAPI = {
   },
   clear: async () => {
     const response = await apiClient.post("/cart/clear");
+    return response.data;
+  },
+};
+
+export const wishlistAPI = {
+  get: async () => {
+    const response = await apiClient.get("/wishlist");
+    return response.data;
+  },
+  add: async (productId) => {
+    const response = await apiClient.post("/wishlist", { productId });
+    return response.data;
+  },
+  remove: async (productId) => {
+    const response = await apiClient.delete("/wishlist", { data: { productId } });
+    return response.data;
+  },
+  clear: async () => {
+    const response = await apiClient.post("/wishlist/clear");
     return response.data;
   },
 };

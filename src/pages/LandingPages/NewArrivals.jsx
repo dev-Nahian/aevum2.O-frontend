@@ -5,78 +5,7 @@ import { Link } from "react-router-dom";
 import { productAPI } from "@/lib/apiClient";
 
 // Sample new arrivals data (replace with API fetch in production)
-const NEW_ARRIVALS_DATA = [
-    {
-        id: 1,
-        category: "EAU DE TOILETTE",
-        title: "Ocean Breeze Mist",
-        price: "$98",
-        image: `https://images.unsplash.com/photo-1587017539504-67cfbddac569?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D`,
-    },
-    {
-        id: 2,
-        category: "SAREE",
-        title: "Jamdani Cotton Saree",
-        price: "$145",
-        image: `https://mcprod.aarong.com/media/catalog/product/0/4/0410000116404.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 3,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "$2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/1/2/1200000038146.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 4,
-        category: "OUTERWEAR",
-        title: "Handcrafted Long Shrug",
-        price: "$95",
-        image: `https://mcprod.aarong.com/media/catalog/product/0/4/0410000116422.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 5,
-        category: "PREMIUM SCENT",
-        title: "Golden Sandalwood",
-        price: "$160",
-        image: `https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=687&auto=format&fit=crop`,
-    },
-    {
-        id: 6,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "$2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/1/2/1200000038565.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 7,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "$2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/1/2/1200000035528.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 8,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "$2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/1/2/1200000035577.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-    {
-        id: 9,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "$2,890",
-        image: `https://mcprod.aarong.com//media/catalog/product/1/2/1200000036111.jpg`,
-    },
-    {
-        id: 10,
-        category: "OUTERWEAR",
-        title: "Camel Cashmere Overcoat",
-        price: "$2,890",
-        image: `https://mcprod.aarong.com/media/catalog/product/1/2/1200000038376.jpg?optimize=high&bg-color=255,255,255&fit=bounds&height=&width=`,
-    },
-];
+const NEW_ARRIVALS_DATA = [];
 
 export default function NewArrivals() {
     const [isLoading, setIsLoading] = useState(true);
@@ -84,8 +13,8 @@ export default function NewArrivals() {
 
     // Fetch new arrivals from backend API
     useEffect(() => {
-        const fetchProducts = async () => {
-            setIsLoading(true);
+        const fetchProducts = async (showSkeleton = true) => {
+            if (showSkeleton) setIsLoading(true);
             try {
                 const data = await productAPI.getAll({ newest: "true" });
                 setProducts(data.products || data);
@@ -93,10 +22,27 @@ export default function NewArrivals() {
                 console.error("Error fetching new arrivals:", error);
                 setProducts(NEW_ARRIVALS_DATA);
             } finally {
-                setIsLoading(false);
+                if (showSkeleton) setIsLoading(false);
             }
         };
-        fetchProducts();
+        fetchProducts(true);
+
+        const handleFocus = () => {
+            fetchProducts(false);
+        };
+        window.addEventListener("focus", handleFocus);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") {
+                fetchProducts(false);
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisibility);
+
+        return () => {
+            window.removeEventListener("focus", handleFocus);
+            document.removeEventListener("visibilitychange", handleVisibility);
+        };
     }, []);
 
     // Placeholder handlers (connect to cart/wishlist context in production)

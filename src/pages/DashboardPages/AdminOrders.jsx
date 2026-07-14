@@ -173,7 +173,7 @@ export default function AdminOrders() {
                       {o.items?.length} item{o.items?.length !== 1 ? "s" : ""}
                     </td>
                     <td className="px-6 py-4 text-xs font-bold text-[#13110F]">
-                      ${o.total?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      ৳{o.total?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`text-[9px] font-bold tracking-[0.1em] px-2.5 py-1 rounded border uppercase ${paymentColor[o.paymentStatus] || "text-gray-500 bg-gray-50 border-gray-200"}`}>
@@ -292,7 +292,7 @@ export default function AdminOrders() {
                         <div className="flex gap-4 mt-1.5 text-[10px] text-[#72706F] font-semibold">
                           <span>QTY: <strong className="text-[#13110F] font-bold">{item.quantity}</strong></span>
                           <span>SIZE: <strong className="text-[#13110F] font-bold">{item.size}</strong></span>
-                          <span>PRICE: <strong className="text-[#13110F] font-bold">${item.price}</strong></span>
+                          <span>PRICE: <strong className="text-[#13110F] font-bold">৳{item.price}</strong></span>
                         </div>
                       </div>
                     </div>
@@ -304,21 +304,21 @@ export default function AdminOrders() {
               <div className="border-t border-[#E5E2DA] pt-4 space-y-2 text-xs">
                 <div className="flex justify-between text-[#72706F] font-semibold uppercase tracking-wider">
                   <span>Subtotal</span>
-                  <span>${selectedOrder.subtotal?.toFixed(2)}</span>
+                  <span>৳{selectedOrder.subtotal?.toFixed(2)}</span>
                 </div>
                 {selectedOrder.discountApplied > 0 && (
                   <div className="flex justify-between text-emerald-600 font-semibold uppercase tracking-wider">
                     <span>Discount code applied</span>
-                    <span>-${selectedOrder.discountApplied?.toFixed(2)}</span>
+                    <span>-৳{selectedOrder.discountApplied?.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-[#72706F] font-semibold uppercase tracking-wider">
                   <span>Shipping Fee</span>
-                  <span>${selectedOrder.shipping?.toFixed(2)}</span>
+                  <span>৳{selectedOrder.shipping?.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-[#13110F] text-sm border-t border-[#E5E2DA]/50 pt-2 uppercase tracking-wider">
                   <span>Grand Total</span>
-                  <span className="text-base text-[#C5A880]">${selectedOrder.total?.toFixed(2)}</span>
+                  <span className="text-base text-[#C5A880]">৳{selectedOrder.total?.toFixed(2)}</span>
                 </div>
               </div>
 

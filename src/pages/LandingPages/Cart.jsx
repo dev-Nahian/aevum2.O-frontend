@@ -196,7 +196,7 @@ export default function Cart() {
                               Price:
                             </span>
                             <span className="font-cormorant text-xs font-semibold">
-                              ${unitPriceVal}
+                              ৳{unitPriceVal}
                             </span>
                           </div>
                         </div>
@@ -205,7 +205,7 @@ export default function Cart() {
                       {/* Desktop Unit Price (2 cols) */}
                       <div className="hidden md:block col-span-2 text-center">
                         <span className="font-cormorant text-sm text-[#13110F] font-semibold">
-                          ${unitPriceVal}
+                          ৳{unitPriceVal}
                         </span>
                       </div>
 
@@ -256,7 +256,7 @@ export default function Cart() {
 
                         <div className="flex items-center gap-4">
                           <span className="font-cormorant text-base text-[#13110F] font-semibold">
-                            ${rowSubtotal.toLocaleString()}
+                            ৳{rowSubtotal.toLocaleString()}
                           </span>
 
                           {/* Trash button */}
@@ -305,7 +305,7 @@ export default function Cart() {
                 <div className="flex justify-between items-center text-xs font-inter text-[#72706F]">
                   <span className="font-light">Subtotal</span>
                   <span className="font-cormorant font-semibold text-sm text-[#13110F]">
-                    ${subtotal.toLocaleString()}
+                    ৳{subtotal.toLocaleString()}
                   </span>
                 </div>
 
@@ -329,7 +329,7 @@ export default function Cart() {
                 <div className="flex justify-between items-center text-sm font-semibold font-inter text-[#13110F] uppercase tracking-wider">
                   <span>Estimated Total</span>
                   <span className="font-cormorant text-xl font-bold">
-                    ${total.toLocaleString()}
+                    ৳{total.toLocaleString()}
                   </span>
                 </div>
 

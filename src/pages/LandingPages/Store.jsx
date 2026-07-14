@@ -14,7 +14,7 @@ const DEFAULT_FILTERS = {
   types: ["Men", "Women", "Perfumes"],
   selectedSubCats: [],
   minPrice: 0,
-  maxPrice: 1000,
+  maxPrice: 1000000,
   availability: [],
 };
 
@@ -29,10 +29,26 @@ export default function Store() {
   const [productsLoaded, setProductsLoaded] = useState(false);
   const [categories, setCategories] = useState([]);
 
+  const maxProductPrice = useMemo(() => {
+    if (dbProducts.length === 0) return 1000000;
+    const maxVal = Math.max(...dbProducts.map((p) => p.priceVal || 0));
+    return maxVal > 0 ? Math.ceil(maxVal) : 1000000;
+  }, [dbProducts]);
+
+  // Adjust maxPrice in filters when products load
+  useEffect(() => {
+    if (dbProducts.length > 0) {
+      const maxVal = Math.max(...dbProducts.map(p => p.priceVal || 0));
+      const calculatedMax = maxVal > 0 ? Math.ceil(maxVal) : 1000;
+      setAppliedFilters(prev => ({ ...prev, maxPrice: calculatedMax }));
+      setTempFilters(prev => ({ ...prev, maxPrice: calculatedMax }));
+    }
+  }, [dbProducts]);
+
   // Fetch products from API on mount
   useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
+    const fetchProducts = async (showSkeleton = true) => {
+      if (showSkeleton) setIsLoading(true);
       try {
         const response = await productAPI.getAll({ limit: 1000 });
         setDbProducts(response.products || []);
@@ -43,10 +59,28 @@ export default function Store() {
         setDbProducts(products);
         setProductsLoaded(true);
       } finally {
-        setIsLoading(false);
+        if (showSkeleton) setIsLoading(false);
       }
     };
-    fetchProducts();
+    
+    fetchProducts(true);
+
+    const handleFocus = () => {
+      fetchProducts(false);
+    };
+    window.addEventListener("focus", handleFocus);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchProducts(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   // Fetch categories from API on mount
@@ -62,20 +96,7 @@ export default function Store() {
     fetchCategories();
   }, []);
 
-  // Sync types with categories productTypes dynamically
-  useEffect(() => {
-    if (categories.length > 0) {
-      const dbTypes = Array.from(new Set(categories.map(c => c.productType || c.name)));
-      setAppliedFilters(prev => ({
-        ...prev,
-        types: dbTypes
-      }));
-      setTempFilters(prev => ({
-        ...prev,
-        types: dbTypes
-      }));
-    }
-  }, [categories]);
+  // Dynamic categories list loaded successfully
 
   // --- COLLAPSE STATES FOR DRAWER ACCORDIONS ---
   const [openSections, setOpenSections] = useState({
@@ -160,8 +181,8 @@ export default function Store() {
   };
 
   const resetFilters = () => {
-    setTempFilters(DEFAULT_FILTERS);
-    setAppliedFilters(DEFAULT_FILTERS);
+    setTempFilters({ ...DEFAULT_FILTERS, maxPrice: maxProductPrice });
+    setAppliedFilters({ ...DEFAULT_FILTERS, maxPrice: maxProductPrice });
     setCurrentPage(1);
     setIsFilterOpen(false);
   };
@@ -195,14 +216,14 @@ export default function Store() {
     setAppliedFilters((prev) => ({
       ...prev,
       minPrice: 0,
-      maxPrice: 1000,
+      maxPrice: maxProductPrice,
     }));
     setCurrentPage(1);
   };
 
   const clearAllFilters = () => {
-    setAppliedFilters(DEFAULT_FILTERS);
-    setTempFilters(DEFAULT_FILTERS);
+    setAppliedFilters({ ...DEFAULT_FILTERS, maxPrice: maxProductPrice });
+    setTempFilters({ ...DEFAULT_FILTERS, maxPrice: maxProductPrice });
     setCurrentPage(1);
   };
 
@@ -292,17 +313,17 @@ export default function Store() {
   // --- DETECT ACTIVE FILTER STATUS (FOR PILLS ROW) ---
   const hasActiveFilters = useMemo(() => {
     return (
-      appliedFilters.types.length < (categories.length > 0 ? categories.length : 3) ||
+      appliedFilters.types.length < 3 ||
       appliedFilters.selectedSubCats.length > 0 ||
       appliedFilters.minPrice > 0 ||
-      appliedFilters.maxPrice < 1000 ||
+      appliedFilters.maxPrice < maxProductPrice ||
       appliedFilters.availability.length > 0
     );
-  }, [appliedFilters, categories]);
+  }, [appliedFilters, maxProductPrice]);
 
   // --- DUAL PRICE SLIDER HELPER VARIABLES ---
-  const minPercent = (tempFilters.minPrice / 1000) * 100;
-  const maxPercent = (tempFilters.maxPrice / 1000) * 100;
+  const minPercent = (tempFilters.minPrice / maxProductPrice) * 100;
+  const maxPercent = (tempFilters.maxPrice / maxProductPrice) * 100;
 
   return (
     <div className="bg-[#FDFAF4] min-h-screen">
@@ -404,12 +425,12 @@ export default function Store() {
 
               {/* Price Tags */}
               {(appliedFilters.minPrice > 0 ||
-                appliedFilters.maxPrice < 1000) && (
+                appliedFilters.maxPrice < maxProductPrice) && (
                 <button
                   onClick={resetPriceFilter}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF8F5] border border-[#E5E2DA] rounded-full text-xs font-inter text-[#2C2A29] hover:bg-[#F2EFE8] transition-colors"
                 >
-                  ${appliedFilters.minPrice} - ${appliedFilters.maxPrice}
+                  ৳{appliedFilters.minPrice} - ৳{appliedFilters.maxPrice}
                   <X size={12} className="text-[#9B9694]" />
                 </button>
               )}
@@ -535,10 +556,7 @@ export default function Store() {
 
             {openSections.productType && (
               <div className="space-y-3 mt-4 animate-fadeIn">
-                {(categories.length > 0
-                  ? Array.from(new Set(categories.map((c) => c.productType || c.name)))
-                  : ["Men", "Women", "Perfumes"]
-                ).map((type) => {
+                {["Men", "Women", "Perfumes"].map((type) => {
                   const isChecked = tempFilters.types.includes(type);
                   return (
                     <label
@@ -698,7 +716,7 @@ export default function Store() {
                   <input
                     type="range"
                     min="0"
-                    max="1000"
+                    max={maxProductPrice}
                     value={tempFilters.minPrice}
                     onChange={(e) => {
                       const val = Math.min(
@@ -713,7 +731,7 @@ export default function Store() {
                   <input
                     type="range"
                     min="0"
-                    max="1000"
+                    max={maxProductPrice}
                     value={tempFilters.maxPrice}
                     onChange={(e) => {
                       const val = Math.max(
@@ -735,13 +753,13 @@ export default function Store() {
                     </span>
                     <div className="flex items-center border-b border-[#D9D5D2] py-1">
                       <span className="font-inter text-xs text-[#9B9694] mr-1">
-                        $
+                        ৳
                       </span>
                       <input
                         type="number"
                         value={tempFilters.minPrice}
                         min="0"
-                        max="1000"
+                        max={maxProductPrice}
                         onChange={(e) => {
                           const val = Math.min(
                             Number(e.target.value),
@@ -762,13 +780,13 @@ export default function Store() {
                     </span>
                     <div className="flex items-center border-b border-[#D9D5D2] py-1">
                       <span className="font-inter text-xs text-[#9B9694] mr-1">
-                        $
+                        ৳
                       </span>
                       <input
                         type="number"
                         value={tempFilters.maxPrice}
                         min="0"
-                        max="1000"
+                        max={maxProductPrice}
                         onChange={(e) => {
                           const val = Math.max(
                             Number(e.target.value),
@@ -776,7 +794,7 @@ export default function Store() {
                           );
                           setTempFilters((prev) => ({
                             ...prev,
-                            maxPrice: isNaN(val) ? 1000 : val,
+                            maxPrice: isNaN(val) ? maxProductPrice : val,
                           }));
                         }}
                         className="w-full font-inter text-xs text-[#1A1A1A] bg-transparent outline-none border-none p-0 focus:ring-0"

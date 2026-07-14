@@ -87,7 +87,7 @@ export default function AdminOverview() {
         />
         <StatCard 
           label="Revenue Generated" 
-          value={`$${(stats?.totalRevenue ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+          value={`৳${(stats?.totalRevenue ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
           icon={DollarSign} 
           colorClass="bg-[#C5A880]"
           subText="+8.2% monthly target"
@@ -168,7 +168,7 @@ export default function AdminOverview() {
                         <p className="text-[9px] text-[#9B9694] mt-0.5">{o.user?.email || "No email available"}</p>
                       </td>
                       <td className="px-6 py-4 text-xs font-bold text-[#13110F]">
-                        ${o.total?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ৳{o.total?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`text-[9px] font-bold tracking-[0.1em] px-3 py-1 rounded-full border uppercase ${statusColor[o.orderStatus] || ""}`}>

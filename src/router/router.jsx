@@ -14,6 +14,7 @@ import NewPassword from "@/pages/AuthPages/NewPassword";
 import Checkout from "@/pages/LandingPages/Checkout";
 import Cart from "@/pages/LandingPages/Cart";
 import Store from "@/pages/LandingPages/Store";
+import Search from "@/pages/LandingPages/Search";
 import ErrorPage from "@/pages/FallbackPages/ErrorPage";
 import NewArrivals from "@/pages/LandingPages/NewArrivals";
 import About from "@/pages/LandingPages/About";
@@ -22,6 +23,7 @@ import AdminOrders from "@/pages/DashboardPages/AdminOrders";
 import AdminProducts from "@/pages/DashboardPages/AdminProducts";
 import AdminCMS from "@/pages/DashboardPages/AdminCMS";
 import AdminUsers from "@/pages/DashboardPages/AdminUsers";
+import AdminReviews from "@/pages/DashboardPages/AdminReviews";
 import AdminCategories from "@/pages/DashboardPages/AdminCategories";
 
 const router = createBrowserRouter([
@@ -92,6 +94,10 @@ const router = createBrowserRouter([
         element: <Store />,
       },
       {
+        path: "search",
+        element: <Search />,
+      },
+      {
         path: "category/new-arrivals",
         element: <NewArrivals />,
       }
@@ -128,6 +134,10 @@ const router = createBrowserRouter([
       {
         path: "categories",
         element: <AdminCategories />,
+      },
+      {
+        path: "reviews",
+        element: <AdminReviews />,
       },
     ],
   },

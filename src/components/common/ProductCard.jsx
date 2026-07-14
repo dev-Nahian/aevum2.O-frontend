@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { Heart, Sparkles, X, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { addToWishlistAsync, removeFromWishlistAsync } from "@/Redux/wishlistSlice";
+import toast from "react-hot-toast";
 
 export default function ProductCard({ 
     product, 
@@ -9,8 +12,11 @@ export default function ProductCard({
     onAddToBag, 
     onPersonalize 
 }) {
-    // ✅ Local state for visual feedback (in production, lift to Context/API)
-    const [isWishlisted, setIsWishlisted] = useState(true);
+    const dispatch = useDispatch();
+    const wishlistItems = useSelector((state) => state.wishlist?.wishlistItems || []);
+    const isWishlisted = wishlistItems.some(
+        (item) => item.id === (product.id || product._id) || item._id === (product.id || product._id)
+    );
     const [isTouchDevice, setIsTouchDevice] = useState(false);
 
     // Detect touch devices for hover fallback
@@ -21,10 +27,33 @@ export default function ProductCard({
     const toggleWishlist = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsWishlisted((prev) => !prev);
+        const productId = product._id || product.id;
         
-        // TODO: Sync with backend/wishlist context
-        // dispatch({ type: 'TOGGLE_WISHLIST', productId: product.id });
+        if (isWishlisted) {
+            dispatch(removeFromWishlistAsync(productId));
+            toast.success(`${product.title} removed from wishlist`, {
+                position: "bottom-center",
+                style: {
+                    background: "#1A1A1A",
+                    color: "#FFF",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: "12px",
+                    borderRadius: "4px",
+                }
+            });
+        } else {
+            dispatch(addToWishlistAsync(product));
+            toast.success(`${product.title} added to wishlist`, {
+                position: "bottom-center",
+                style: {
+                    background: "#1A1A1A",
+                    color: "#FFF",
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: "12px",
+                    borderRadius: "4px",
+                }
+            });
+        }
     };
 
     if (variant === "wishlist") {

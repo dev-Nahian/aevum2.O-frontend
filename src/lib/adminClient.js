@@ -7,6 +7,11 @@ const adminClient = axios.create({ baseURL: BASE });
 adminClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("aevum_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  
+  // Prevent caching of admin API responses
+  config.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+  config.headers["Pragma"] = "no-cache";
+  config.headers["Expires"] = "0";
   return config;
 });
 
@@ -44,4 +49,8 @@ export const adminAPI = {
   uploadImage: (formData) => adminClient.post("/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" }
   }).then((r) => r.data),
+
+  // Reviews
+  getReviews: () => adminClient.get("/admin/reviews").then((r) => r.data),
+  updateReviewStatus: (id, status) => adminClient.put(`/admin/reviews/${id}`, { status }).then((r) => r.data),
 };

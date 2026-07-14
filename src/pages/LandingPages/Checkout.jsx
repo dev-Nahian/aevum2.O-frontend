@@ -271,7 +271,7 @@ export default function Checkout() {
                     </span>
                     <span className="font-cormorant font-semibold text-sm">
                       {typeof item.price === "number"
-                        ? `$${item.price * (item.quantity || 1)}`
+                        ? `৳${item.price * (item.quantity || 1)}`
                         : item.price}
                     </span>
                   </div>
@@ -279,12 +279,12 @@ export default function Checkout() {
                 <div className="border-t border-[#E2DFD8] pt-3 mt-3 space-y-1.5">
                   <div className="flex justify-between text-xs text-[#72706F]">
                     <span>Subtotal</span>
-                    <span>${subtotal.toLocaleString()}</span>
+                    <span>৳{subtotal.toLocaleString()}</span>
                   </div>
                   {promoDiscount > 0 && (
                     <div className="flex justify-between text-xs text-[#72706F]">
                       <span>Promotion ({appliedPromo})</span>
-                      <span>-${promoDiscount.toLocaleString()}</span>
+                      <span>-৳{promoDiscount.toLocaleString()}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-xs text-[#72706F]">
@@ -295,7 +295,7 @@ export default function Checkout() {
                   </div>
                   <div className="flex justify-between text-sm text-[#13110F] font-semibold uppercase tracking-wider pt-2 border-t border-[#E2DFD8] border-dashed">
                     <span>Grand Total</span>
-                    <span>${total.toLocaleString()}</span>
+                    <span>৳{total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -833,7 +833,7 @@ export default function Checkout() {
                 ) : (
                   <>
                     <Lock size={12} className="mr-1" />
-                    PLACE ORDER • ${total.toLocaleString()}
+                    PLACE ORDER • ৳{total.toLocaleString()}
                   </>
                 )}
               </button>
@@ -877,7 +877,7 @@ export default function Checkout() {
                   </div>
                   <div className="font-cormorant text-sm text-[#13110F] font-semibold">
                     {typeof item.price === "number"
-                      ? `$${item.price}`
+                      ? `৳${item.price}`
                       : item.price}
                   </div>
                 </div>
@@ -953,7 +953,7 @@ export default function Checkout() {
               <div className="flex justify-between items-center text-xs font-inter text-[#72706F]">
                 <span className="font-light">Subtotal</span>
                 <span className="font-cormorant font-semibold text-sm text-[#13110F]">
-                  ${subtotal.toLocaleString()}
+                  ৳{subtotal.toLocaleString()}
                 </span>
               </div>
 
@@ -964,7 +964,7 @@ export default function Checkout() {
                     Discount
                   </span>
                   <span className="font-cormorant font-semibold text-sm text-amber-700">
-                    -${promoDiscount.toLocaleString()}
+                    -৳{promoDiscount.toLocaleString()}
                   </span>
                 </div>
               )}
@@ -979,7 +979,7 @@ export default function Checkout() {
               <div className="flex justify-between items-center text-sm font-semibold font-inter text-[#13110F] uppercase tracking-wider">
                 <span>Grand Total</span>
                 <span className="font-cormorant text-lg font-bold">
-                  ${total.toLocaleString()}
+                  ৳{total.toLocaleString()}
                 </span>
               </div>
             </div>

@@ -5,6 +5,7 @@ import PromotionalHeader from "@/shared/LendingShared/PromotionalHeader";
 import Footer from "@/shared/LendingShared/Footer";
 import { useDispatch } from "react-redux";
 import { fetchCartAsync } from "@/Redux/cartSlice";
+import { fetchWishlistAsync } from "@/Redux/wishlistSlice";
 
 export default function MainLayout() {
   const dispatch = useDispatch();
@@ -13,6 +14,7 @@ export default function MainLayout() {
     const token = localStorage.getItem("aevum_token");
     if (token) {
       dispatch(fetchCartAsync());
+      dispatch(fetchWishlistAsync());
     }
   }, [dispatch]);
 
