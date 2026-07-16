@@ -99,13 +99,14 @@ export default function Checkout() {
 
   // Handle Prefill trigger based on user auth state toggle
   useEffect(() => {
-    if (!isGuestMode && isLoggedIn && currentUser) {
-      setValue("name", currentUser.fullName || currentUser.name || "");
-      setValue("phone", currentUser.mobileNumber || currentUser.phone || "");
-      setValue("address", currentUser.address || "");
-      setValue("city", currentUser.city || "");
-      setValue("postalCode", currentUser.postalCode || "");
-      setValue("country", currentUser.country || "Bangladesh");
+    const user = JSON.parse(localStorage.getItem("aevum_user") || "null");
+    if (!isGuestMode && isLoggedIn && user) {
+      setValue("name", user.fullName || user.name || "");
+      setValue("phone", user.mobileNumber || user.phone || "");
+      setValue("address", user.address || "");
+      setValue("city", user.city || "");
+      setValue("postalCode", user.postalCode || "");
+      setValue("country", user.country || "Bangladesh");
     } else {
       // Reset to empty values for manual Guest Checkout
       setValue("name", "");
@@ -115,7 +116,7 @@ export default function Checkout() {
       setValue("postalCode", "");
       setValue("country", "");
     }
-  }, [isGuestMode, isLoggedIn, currentUser, setValue]);
+  }, [isGuestMode, isLoggedIn, setValue]);
 
   // Calculate Summary Totals
   const subtotal = checkoutItems.reduce((acc, item) => {
