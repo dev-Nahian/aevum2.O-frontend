@@ -78,26 +78,11 @@ export default function CatBody({ slug }) {
     return (
         <section className="py-12 sm:py-16 md:py-20 lg:py-24">
             <Container>
-                {/* Header: Category Label + Filter */}
+                {/* Header: Category Label */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 sm:pb-6 border-b border-[#D9D5D2]">
                     <h4 className="font-inter text-sm sm:text-base font-normal text-[#9B9694] leading-tight uppercase tracking-[1.6px]">
                         {categoryLabel}
                     </h4>
-                    
-                    {/* Filter Button */}
-                    <button 
-                        onClick={handleFilterClick}
-                        className="inline-flex items-center gap-2 self-start sm:self-auto px-4 py-2 rounded-sm hover:bg-[#F8F2EB] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#9B9694]/30 min-h-[44px]"
-                        aria-label="Open product filters"
-                    >
-                        <span className="font-inter text-sm font-normal text-[#9B9694] uppercase tracking-[1.6px]">
-                            FILTER
-                        </span>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[#9B9694]">
-                            <path d="M5 12L19 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                            <path d="M12 19L12 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                    </button>
                 </div>
 
                 {/* Product Grid - Responsive Columns */}
