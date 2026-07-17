@@ -6,7 +6,7 @@ import { authAPI } from "@/lib/apiClient";
 
 export default function VerificationOTP() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(120);
   const [isVerifying, setIsVerifying] = useState(false);
   
   const navigate = useNavigate();
