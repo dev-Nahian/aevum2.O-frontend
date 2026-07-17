@@ -43,7 +43,13 @@ export default function SignUp() {
       toast.success(response.message || "OTP code sent to email.");
       localStorage.setItem("aevum_signup_email", data.email);
       setTimeout(() => {
-        navigate("/auth/verification/otp", { state: { email: data.email } });
+        navigate("/auth/verification/otp", { 
+          state: { 
+            email: data.email,
+            devOtp: response.devOtp,
+            emailError: response.emailError
+          } 
+        });
       }, 1000);
     } catch (error) {
       toast.error(

@@ -39,7 +39,13 @@ export default function LogIn() {
         toast.error("Email not verified. Sending verification code...");
         localStorage.setItem("aevum_signup_email", data.email);
         setTimeout(() => {
-          navigate("/auth/verification/otp", { state: { email: data.email } });
+          navigate("/auth/verification/otp", { 
+            state: { 
+              email: data.email,
+              devOtp: error.response?.data?.devOtp,
+              emailError: error.response?.data?.emailError
+            } 
+          });
         }, 1200);
       } else {
         toast.error(

@@ -15,6 +15,30 @@ export default function VerificationOTP() {
 
   // Retrieve dynamic email address if passed from signup flow, or fallback to mockup email
   const email = location.state?.email || localStorage.getItem("aevum_signup_email") || "example@aevum.com";
+  const initialDevOtp = location.state?.devOtp;
+  const initialEmailError = location.state?.emailError;
+
+  const [receivedDevOtp, setReceivedDevOtp] = useState(initialDevOtp || "");
+  const [hasEmailError, setHasEmailError] = useState(initialEmailError || false);
+
+  // Notify user if email failed or dev OTP is available
+  useEffect(() => {
+    if (initialEmailError) {
+      toast.error("SMTP Delivery failed. Check server logs for details.", { duration: 5000 });
+      setHasEmailError(true);
+    }
+    if (initialDevOtp) {
+      setReceivedDevOtp(initialDevOtp);
+      toast(`[Dev Mode] Verification code is: ${initialDevOtp}`, {
+        icon: "🔑",
+        duration: 10000,
+      });
+      const digits = initialDevOtp.toString().split("");
+      if (digits.length === 6) {
+        setOtp(digits);
+      }
+    }
+  }, [initialDevOtp, initialEmailError]);
 
   // Countdown timer effect
   useEffect(() => {
@@ -82,11 +106,32 @@ export default function VerificationOTP() {
   // Reset resend timer
   const handleResend = async () => {
     try {
-      await authAPI.resendOTP(email);
+      const response = await authAPI.resendOTP(email);
       setTimeLeft(30);
       setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0].focus();
       toast.success("A new verification code has been sent!");
+
+      if (response.emailError) {
+        toast.error("SMTP Delivery failed. Check server logs for details.", { duration: 5000 });
+        setHasEmailError(true);
+      } else {
+        setHasEmailError(false);
+      }
+
+      if (response.devOtp) {
+        setReceivedDevOtp(response.devOtp);
+        toast(`[Dev Mode] Verification code is: ${response.devOtp}`, {
+          icon: "🔑",
+          duration: 10000,
+        });
+        const digits = response.devOtp.toString().split("");
+        if (digits.length === 6) {
+          setOtp(digits);
+        }
+      } else {
+        setReceivedDevOtp("");
+      }
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Failed to resend verification code."
@@ -195,6 +240,29 @@ export default function VerificationOTP() {
             <p className="font-inter text-xs text-neutral-500 tracking-[0.1em] uppercase animate-pulse mb-6">
               Verifying Code...
             </p>
+          )}
+
+          {/* Development Helper UI */}
+          {(receivedDevOtp || hasEmailError) && (
+            <div className="my-6 p-5 border border-[#E2DFD8] bg-[#FDFAF4] shadow-sm max-w-sm w-full text-left font-sans">
+              <h4 className="text-xs font-semibold text-[#13110F] tracking-widest uppercase mb-2 flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                </span>
+                DEVELOPER ASSISTANT
+              </h4>
+              {hasEmailError && (
+                <p className="text-xs text-[#72706F] font-light leading-relaxed mb-3">
+                  SMTP mail delivery failed (likely bad credentials or SSL port mismatch). Please generate and configure a <strong>Gmail App Password</strong> (16 characters) in your environment variables.
+                </p>
+              )}
+              {receivedDevOtp && (
+                <p className="text-xs text-[#13110F] font-light">
+                  Bypass Verification Code: <span className="font-mono font-bold text-sm bg-[#FDFAF4] border border-[#E2DFD8] px-2 py-0.5 ml-1 select-all">{receivedDevOtp}</span>
+                </p>
+              )}
+            </div>
           )}
 
           {/* Actions Bottom List */}
