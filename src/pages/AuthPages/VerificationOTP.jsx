@@ -12,9 +12,16 @@ export default function VerificationOTP() {
   const navigate = useNavigate();
   const location = useLocation();
   const inputRefs = useRef([]);
+  const isVerifyingRef = useRef(false);
 
-  // Retrieve dynamic email address if passed from signup flow, or fallback to mockup email
-  const email = location.state?.email || localStorage.getItem("aevum_signup_email") || "example@aevum.com";
+  // Retrieve dynamic email address if passed from signup flow, or fallback to saved email
+  const email = (
+    location.state?.email ||
+    localStorage.getItem("aevum_signup_email") ||
+    "example@aevum.com"
+  ).trim();
+
+  const devOtp = location.state?.devOtp;
 
   // Countdown timer effect
   useEffect(() => {
@@ -30,7 +37,7 @@ export default function VerificationOTP() {
   // Handle single digit input
   const handleChange = (element, index) => {
     const value = element.value;
-    if (isNaN(value)) return; // Only allow numbers
+    if (value && isNaN(value)) return; // Only allow numbers
 
     const newOtp = [...otp];
     newOtp[index] = value.substring(value.length - 1); // Get last typed digit
@@ -38,11 +45,11 @@ export default function VerificationOTP() {
 
     // Auto-focus next input box if filled
     if (value && index < 5) {
-      inputRefs.current[index + 1].focus();
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
-  // Keyboard navigation (Backspace support)
+  // Keyboard navigation (Backspace & Enter support)
   const handleKeyDown = (e, index) => {
     if (e.key === "Backspace") {
       if (!otp[index] && index > 0) {
@@ -50,11 +57,16 @@ export default function VerificationOTP() {
         const newOtp = [...otp];
         newOtp[index - 1] = "";
         setOtp(newOtp);
-        inputRefs.current[index - 1].focus();
+        inputRefs.current[index - 1]?.focus();
       } else {
         const newOtp = [...otp];
         newOtp[index] = "";
         setOtp(newOtp);
+      }
+    } else if (e.key === "Enter") {
+      const enteredCode = otp.join("");
+      if (enteredCode.length === 6) {
+        triggerVerification();
       }
     }
   };
@@ -74,19 +86,24 @@ export default function VerificationOTP() {
     
     setOtp(newOtp);
 
-    // Focus last filled or 6th input box
+    // Focus last filled input box
     const focusIndex = Math.min(digits.length, 5);
-    inputRefs.current[focusIndex].focus();
+    inputRefs.current[focusIndex]?.focus();
   };
 
   // Reset resend timer
   const handleResend = async () => {
     try {
-      await authAPI.resendOTP(email);
-      setTimeLeft(30);
+      const response = await authAPI.resendOTP(email);
+      setTimeLeft(120);
       setOtp(["", "", "", "", "", ""]);
-      inputRefs.current[0].focus();
-      toast.success("A new verification code has been sent!");
+      inputRefs.current[0]?.focus();
+      
+      const msg = response?.message || "A new verification code has been sent!";
+      toast.success(msg);
+      if (response?.devOtp) {
+        toast(`Dev Code: ${response.devOtp}`, { icon: "🔑", duration: 6000 });
+      }
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Failed to resend verification code."
@@ -97,31 +114,40 @@ export default function VerificationOTP() {
   // Trigger auto-verification when all 6 digits are complete
   useEffect(() => {
     const isComplete = otp.every((digit) => digit !== "");
-    if (isComplete && !isVerifying) {
+    if (isComplete && !isVerifyingRef.current) {
       triggerVerification();
     }
   }, [otp]);
 
   const triggerVerification = async () => {
+    if (isVerifyingRef.current) return;
+    
+    const enteredCode = otp.join("").trim();
+    if (enteredCode.length < 6) {
+      toast.error("Please enter the complete 6-digit code");
+      return;
+    }
+
+    isVerifyingRef.current = true;
     setIsVerifying(true);
-    const enteredCode = otp.join("");
 
     try {
       const response = await authAPI.verifyOTP(email, enteredCode);
       localStorage.setItem("aevum_token", response.token);
       localStorage.setItem("aevum_user", JSON.stringify(response.user));
       
-      toast.success("Verification successful! Welcome aboard.");
+      toast.success("Verification successful! Welcome to AEVUM.");
       setTimeout(() => {
         navigate("/"); // Redirect to landing homepage
-      }, 1000);
+      }, 800);
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Incorrect verification code. Please try again."
       );
       setOtp(["", "", "", "", "", ""]);
-      inputRefs.current[0].focus();
+      inputRefs.current[0]?.focus();
     } finally {
+      isVerifyingRef.current = false;
       setIsVerifying(false);
     }
   };
@@ -160,21 +186,29 @@ export default function VerificationOTP() {
         <div className="w-full max-w-[500px] mx-auto flex flex-col items-center justify-center text-center">
           
           {/* Header */}
-          <div className="mb-8 flex flex-col items-center">
-            <span className="font-inter text-[16px] text-[#72706F] tracking-[2.56px] font-normal uppercase block my-5">
+          <div className="mb-6 flex flex-col items-center">
+            <span className="font-inter text-[14px] sm:text-[16px] text-[#72706F] tracking-[2.56px] font-normal uppercase block my-4">
               VERIFICATION
             </span>
-            <h2 className="font-cormorant text-[40px] lg:text-[56px] font-medium text-[#13110F] leading-[56px]">
+            <h2 className="font-cormorant text-[36px] sm:text-[40px] lg:text-[56px] font-medium text-[#13110F] leading-[56px]">
               Enter Code
             </h2>
-            <p className="font-inter text-[16px] text-[#72706F] font-light tracking-wide mt-5 max-w-[340px] leading-relaxed">
+            <p className="font-inter text-[14px] sm:text-[16px] text-[#72706F] font-light tracking-wide mt-4 max-w-[340px] leading-relaxed">
               We've sent a 6-digit verification code to <br />
               <span className="font-medium text-[#13110F] select-all">{email}</span>
             </p>
+
+            {/* Dev Mode Code Helper (if present) */}
+            {devOtp && (
+              <div className="mt-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-md text-amber-800 font-inter text-xs">
+                <span>Developer Test Code: </span>
+                <strong className="font-mono text-sm tracking-widest">{devOtp}</strong>
+              </div>
+            )}
           </div>
 
           {/* OTP Input Fields Row */}
-          <div className="flex justify-center gap-3 sm:gap-4 my-8" onPaste={handlePaste}>
+          <div className="flex justify-center gap-2 sm:gap-4 my-6" onPaste={handlePaste}>
             {otp.map((digit, idx) => (
               <input
                 key={idx}
@@ -185,26 +219,34 @@ export default function VerificationOTP() {
                 onChange={(e) => handleChange(e.target, idx)}
                 onKeyDown={(e) => handleKeyDown(e, idx)}
                 disabled={isVerifying}
-                className="w-12 h-12 sm:w-14 sm:h-14 bg-transparent border border-[#E2DFD8] text-center text-xl sm:text-2xl text-[#13110F] font-sans focus:outline-none focus:border-neutral-900 transition-colors duration-300 rounded-none disabled:opacity-50"
+                className="w-11 h-12 sm:w-14 sm:h-14 bg-transparent border border-[#E2DFD8] text-center text-xl sm:text-2xl text-[#13110F] font-sans focus:outline-none focus:border-neutral-900 transition-colors duration-300 rounded-none disabled:opacity-50"
               />
             ))}
           </div>
 
-          {/* Verification States / Loader */}
-          {isVerifying && (
-            <p className="font-inter text-xs text-neutral-500 tracking-[0.1em] uppercase animate-pulse mb-6">
-              Verifying Code...
-            </p>
-          )}
-
-
+          {/* Manual Submit Button */}
+          <button
+            type="button"
+            onClick={triggerVerification}
+            disabled={isVerifying || otp.some((d) => d === "")}
+            className="w-full max-w-[320px] bg-[#1A1A1A] hover:bg-[#2C2A29] text-[#FDFAF4] py-3.5 text-xs font-sans tracking-[0.2em] font-medium uppercase transition-all duration-300 my-4 active:scale-[0.99] flex items-center justify-center gap-2 disabled:bg-[#9B9694] disabled:cursor-not-allowed cursor-pointer"
+          >
+            {isVerifying ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                VERIFYING...
+              </>
+            ) : (
+              "VERIFY & CONTINUE"
+            )}
+          </button>
 
           {/* Actions Bottom List */}
-          <div className="flex flex-col items-center gap-6 mt-4">
+          <div className="flex flex-col items-center gap-5 mt-4">
             {/* Countdown / Resend Trigger */}
             <div className="font-inter text-[14px] tracking-[0.1em] text-[#72706F] uppercase font-medium">
               {timeLeft > 0 ? (
-                `RESEND IN 0:${timeLeft < 10 ? "0" : ""}${timeLeft}`
+                `RESEND IN ${Math.floor(timeLeft / 60)}:${timeLeft % 60 < 10 ? "0" : ""}${timeLeft % 60}`
               ) : (
                 <button
                   type="button"
@@ -216,12 +258,12 @@ export default function VerificationOTP() {
               )}
             </div>
 
-            {/* Change Mobile Number / Back Navigation */}
+            {/* Change Account / Back Navigation */}
             <Link
               to="/auth/signup"
               className="font-inter text-[14px] tracking-[0.1em] text-[#72706F] hover:text-black uppercase font-medium transition-colors"
             >
-              CHANGE NUMBER
+              CHANGE EMAIL OR NUMBER
             </Link>
           </div>
 
