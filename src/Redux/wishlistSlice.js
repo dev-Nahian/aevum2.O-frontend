@@ -6,14 +6,17 @@ export const fetchWishlistAsync = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await wishlistAPI.get();
-      return response.wishlist.products.map((p) => ({
-        id: p.id || p._id,
-        _id: p._id,
-        title: p.title,
-        category: p.category,
-        price: p.price,
-        image: p.image,
-      }));
+      const products = response.wishlist?.products || [];
+      return products
+        .filter((p) => p !== null && p !== undefined)
+        .map((p) => ({
+          id: p.id || p._id,
+          _id: p._id,
+          title: p.title,
+          category: p.category,
+          price: p.price,
+          image: p.image,
+        }));
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to fetch wishlist"

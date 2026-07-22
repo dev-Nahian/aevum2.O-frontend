@@ -6,16 +6,19 @@ export const fetchCartAsync = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await cartAPI.get();
-      return response.cart.items.map((item) => ({
-        id: item.product?.id || item.product?._id,
-        _id: item.product?._id,
-        title: item.product?.title,
-        category: item.product?.category,
-        price: item.product?.price,
-        quantity: item.quantity,
-        image: item.product?.image,
-        size: item.size,
-      }));
+      const items = response.cart?.items || [];
+      return items
+        .filter((item) => item.product !== null && item.product !== undefined)
+        .map((item) => ({
+          id: item.product.id || item.product._id,
+          _id: item.product._id,
+          title: item.product.title,
+          category: item.product.category,
+          price: item.product.price,
+          quantity: item.quantity,
+          image: item.product.image,
+          size: item.size,
+        }));
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || "Failed to fetch cart");
     }
